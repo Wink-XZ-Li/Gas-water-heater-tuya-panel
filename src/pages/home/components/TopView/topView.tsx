@@ -5,10 +5,14 @@ import { useActions, useDevInfo, useDpSchema, useProps } from "@ray-js/panel-sdk
 import styles from './topView.module.less';
 import Strings from '@/i18n';
 
+const MIZUDO_model: string[] = ['_ _', 'HW110A0W-NG', 'HW110A0W-LP', 'HW199A0W-NG', 'HW199A0W-LP'];
+
 export default function TopView() {
     const dpSchema = useDpSchema();
     const devInfo = useDevInfo();
     const dpState = useProps(state => state); // 获取所有dpState
+    const deviceModel: number = dpState['device_model']
+    const deviceModelText = deviceModel<MIZUDO_model.length?MIZUDO_model[deviceModel]:'_ _'
 
     const topView = (
         <View className={styles.view}>
@@ -37,7 +41,7 @@ export default function TopView() {
                     <polygon fill='#040000' fill-rule='nonzero' points="1779.83,3979.13 1477.43,3979.13 1477.43,4014.09 1557.8,4014.09 1557.8,4223.57 1698.73,4223.57 1698.73,4014.09 1779.83,4014.09 "/>
                 </g>
             </Svg>
-            <View className={styles.sku}>HW110AOW-NG</View>
+            <View className={styles.sku}>{deviceModelText}</View>
         </View>
     )
 
