@@ -43,8 +43,7 @@ export function Home() {
   const eco: boolean = dpState['eco']
 
   const fault: number = dpState['fault']
-  const errorInfo = fault<errorInfoText.length?errorInfoText[fault]:'_ _'
-  console.log(fault,errorInfo)
+  const [errorInfo, setErrorInfo] = useState<string>('Normal')
 
   const [tempSetTemp, setTempSetTemp] = useState<number>(setTemp)
   const [isShowTempSetTemp, setIsShowTempSetTemp] = useState<boolean>(false)
@@ -55,8 +54,7 @@ export function Home() {
   const [isPressingAdd, setIsPressingAdd] = useState(false);
   const [isPressingReduce, setIsPressingReduce] = useState(false);
 
-  const powerIconBGColor = switch_power?'#295bdd':'#666666'
-  const modeIconBGColor_on = switch_power?"linear-gradient(to right, rgb(53,166,241), rgb(247,18,10))":'rgb(201,201,201)'
+  const modeIconBGColor_on = (switch_power && fault === 0)?"linear-gradient(to right, rgb(53,166,241), rgb(247,18,10))":'rgb(201,201,201)'
 
   const setTempMin = unit==='c' ? 35 : 95;
   const setTempMax = unit==='c' ? 65 : 149;
@@ -103,23 +101,6 @@ export function Home() {
     return () => clearTimeout(timerId); // 组件卸载时清除定时器
   }, [isPressingReduce]);
 
-  // fault alert
-  React.useEffect(() => {
-    const binaryFault = fault.toString(2).split('').reverse()
-    var title: "title"
-    if (fault !== 0) {
-      
-      if (binaryFault[0]==='1') {
-
-      } else if (binaryFault[1]==='1') {
-
-      } else if (binaryFault[2]==='1') {
-
-      }
-      showModal({title: title, content: 'error content', showCancel: false, confirmText: Strings.getLang('confirm')})
-    }
-  }, [dpState['fault']]);
-
   // 跳转到历史界面
   function navigateToHistory() {
     throttle(() => {
@@ -147,7 +128,7 @@ export function Home() {
     } else {
       actions['temp_set_f'].set(temp_f-1)
     }
-}
+  }
 
   // 降温
   function reduceTemp2(temp:number) {
@@ -216,10 +197,97 @@ export function Home() {
     }
   }
 
+  const subTitle:string = unit==='c'?Strings.getLang('hightTempWarm_c'):Strings.getLang('hightTempWarm_f')
+  function directSetTemp(temp) {
+    if (unit==='c') {
+      if (temp>=50) {
+        showModal({title: '', content: subTitle, showCancel: true, cancelText: Strings.getLang('no'), confirmText: Strings.getLang('yes'), 
+          success: (params) => {
+            if (params.confirm) {
+              alertSetTemp(temp)
+            } else {
+              // 有bug，待修复
+            }
+          }
+        })
+      } else {
+        actions['temp_set'].set(temp)
+      }
+    } else {
+      if (temp>=122) {
+        showModal({title: '', content: subTitle, showCancel: true, cancelText: Strings.getLang('no'), confirmText: Strings.getLang('yes'), 
+          success: (params) => {
+            if (params.confirm) {
+              alertSetTemp(temp)
+            } else {
+              // 有bug，待修复
+            }
+          }
+        })
+      } else {
+        actions['temp_set_f'].set(temp)
+      }
+    }
+  }
+
+  function alertSetTemp(temp: number) {
+      if (unit==='c') {
+          actions['temp_set'].set(temp)
+      } else {
+          actions['temp_set_f'].set(temp)
+      }
+  }
+
+  // fault alert
+  React.useEffect(() => {
+    const binaryFault = fault.toString(2).split('').reverse()
+    var title: ""
+    if (fault !== 0) {
+      if (binaryFault[0]==='1') {
+        title = Strings.getLang('E0Title')
+        setErrorInfo('E0')
+      } else if (binaryFault[1]==='1') {
+        title = Strings.getLang('E1Title')
+        setErrorInfo('E1')
+      } else if (binaryFault[2]==='1') {
+        title = Strings.getLang('E2Title')
+        setErrorInfo('E2')
+      } else if (binaryFault[3]==='1') {
+        title = Strings.getLang('E3Title')
+        setErrorInfo('E3')
+      } else if (binaryFault[4]==='1') {
+        title = Strings.getLang('E4Title')
+        setErrorInfo('E4')
+      } else if (binaryFault[5]==='1') {
+        title = Strings.getLang('E5Title')
+        setErrorInfo('E5')
+      } else if (binaryFault[6]==='1') {
+        title = Strings.getLang('E6Title')
+        setErrorInfo('E6')
+      } else if (binaryFault[7]==='1') {
+        title = Strings.getLang('E7Title')
+        setErrorInfo('E7')
+      } else if (binaryFault[8]==='1') {
+        title = Strings.getLang('E8Title')
+        setErrorInfo('E8')
+      } else if (binaryFault[9]==='1') {
+        title = Strings.getLang('E9Title')
+        setErrorInfo('E9')
+      } else if (binaryFault[10]==='1') {
+        title = Strings.getLang('EnTitle')
+        setErrorInfo('En')
+      }
+      showModal({title: title, content: 'error content', showCancel: false, confirmText: Strings.getLang('confirm')})
+    } else {
+      setErrorInfo('Normal');
+    }
+  }, [dpState['fault']]);
+
   // 升降温按钮禁用
-  const disableReduce = (unit==='c'?Boolean(temp_c<=35):Boolean(temp_f<=95))||!switch_power
-  const disableAdd = (unit==='c'?Boolean(temp_c>=65):Boolean(temp_f>=149))||!switch_power
-  const disableMode = !switch_power
+  const disableReduce = (unit==='c'?Boolean(temp_c<=35):Boolean(temp_f<=95)) || !switch_power || (fault !== 0)
+  const disableAdd = (unit==='c'?Boolean(temp_c>=65):Boolean(temp_f>=149)) || !switch_power || (fault !== 0)
+  const disableMode = !switch_power || (fault !== 0)
+  const disablePower =  (fault !== 0)
 
   return (
     <View className={styles.view}>
@@ -281,6 +349,7 @@ export function Home() {
             <Switch 
               color='#d3233b' 
               checked={switch_power}
+              disabled={disablePower}
               onChange={ e =>
                 actions['switch'].set(e.detail.value)
               }
@@ -359,12 +428,7 @@ export function Home() {
                   setTempSetTemp(e)
                 }}
                 onAfterChange={(e) => {
-                  if (unit==='c') {
-                    actions['temp_set'].set(e)
-                  } else {
-                    actions['temp_set_f'].set(e)
-                  }
-                  
+                  directSetTemp(e)
                   setTimeout(() => {
                     setIsShowTempSetTemp(false)
                   }, 500)
