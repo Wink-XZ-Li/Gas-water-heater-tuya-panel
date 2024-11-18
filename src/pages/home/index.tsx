@@ -120,12 +120,6 @@ export function Home() {
     }
   }, [dpState['fault']]);
 
-
-  // 开关
-  function switchPower() {
-    actions['switch'].set(!switch_power)
-  }
-
   // 跳转到历史界面
   function navigateToHistory() {
     throttle(() => {
@@ -408,8 +402,12 @@ export function Home() {
 
         {/* 图表 */}
         <View className={`${styles.stateAndControlSection} ${styles.baseSection}`} style={{marginTop: '15px'}}>
-          <Button className={styles.sectionBtn}>
-            
+          <Button 
+            className={styles.sectionBtn}
+            onClick={ () =>
+              navigateToHistory()
+            }
+          >
             <View className={styles.sectionTitle} style={{marginBottom: '5%'}}>
               <Svg className={styles.sectionTitleLogo}  width='40' height='40' viewBox="0 0 14.83 14.86">
                 <path fill='black' fill-rule='nonzero' d="M14.83 13.75l-13.71 0 0 -13.7 -1.12 -0.05 0 14.36c0.03,0.28 0.27,0.51 0.56,0.51 0.01,0 0.02,0 0.03,-0l14.24 0 0 -1.12z"/>

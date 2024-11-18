@@ -24,6 +24,7 @@ export default {
     En: '',
     hightTempWarm_f: 'The setting temperature has exceeded 122℉. Please confirm.',
     hightTempWarm_c: 'The setting temperature has exceeded 50℃. Please confirm.',
+    waterConsumption: 'Water Consumption',
 
     yes: 'YES',
     no: 'NO',
