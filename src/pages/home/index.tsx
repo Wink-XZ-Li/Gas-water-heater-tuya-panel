@@ -105,6 +105,7 @@ export function Home() {
   function navigateToHistory() {
     throttle(() => {
       navigateTo({url: '/pages/history/index'})
+      // navigateTo({url: 'pages/home/test/testConpoments'})
     }, 700)()
   }
   
@@ -328,7 +329,7 @@ export function Home() {
           <Divider/>
           <View className={styles.sectionItem} id='水流速度'>
             <View className={styles.sectionItemText}>Domestic Flow Rate</View>
-            <View className={styles.sectionItemText}>{waterFlow+' GPM'}</View>
+            <View className={styles.sectionItemText}>{waterFlow/10+' GPM'}</View>
           </View>
         </View>
 
