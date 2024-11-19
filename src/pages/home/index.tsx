@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Text, View, ScrollView, navigateTo, Map, Image, showModal,Modal, setTabBarStyle, Button, Switch } from '@ray-js/ray';
 import { useActions, useDevInfo, useDpSchema, useProps } from "@ray-js/panel-sdk";
 import { TopBar } from '@/components';
@@ -11,8 +11,6 @@ import Strings from '@/i18n';
 function Divider() {
   return (<View style={{height: '2px', width: '90%', backgroundColor: '#e9e9e9' }}></View>)
 }
-
-const errorInfoText: string[] = ['Normal', 'E0', 'E1', 'E2', 'E3', 'E4', 'E5', 'E6', 'E7', 'E8', 'En'];
 
 export function Home() {
   const dpSchema = useDpSchema();
@@ -38,15 +36,13 @@ export function Home() {
   const temp_c = dpState['temp_set']
   const temp_f = dpState['temp_set_f']
   const setTemp = unit==='c'?temp_c:temp_f
+  const [localTemp, setLocalTemp] = useState(setTemp); // 本地状态管理滑块值
 
   const work_state: number = dpState['work_state']
   const eco: boolean = dpState['eco']
 
   const fault: number = dpState['fault']
   const [errorInfo, setErrorInfo] = useState<string>('Normal')
-
-  const [tempSetTemp, setTempSetTemp] = useState<number>(setTemp)
-  const [isShowTempSetTemp, setIsShowTempSetTemp] = useState<boolean>(false)
 
   const [reduceOnTouch, setReduceOnTouch] = useState<boolean>(false)
   const [addOnTouch, setAddOnTouch] = useState<boolean>(false)
@@ -58,6 +54,10 @@ export function Home() {
 
   const setTempMin = unit==='c' ? 35 : 95;
   const setTempMax = unit==='c' ? 65 : 149;
+
+  useEffect(() => {
+    setLocalTemp(setTemp);
+  }, [setTemp]);
 
   // 长按温度➕
   React.useEffect(() => {
@@ -105,7 +105,7 @@ export function Home() {
   function navigateToHistory() {
     throttle(() => {
       navigateTo({url: '/pages/history/index'})
-      // navigateTo({url: 'pages/home/test/testConpoments'})
+      // navigateTo({url: '/pages/home/test/testConpoments'})
     }, 700)()
   }
   
@@ -207,7 +207,7 @@ export function Home() {
             if (params.confirm) {
               alertSetTemp(temp)
             } else {
-              // 有bug，待修复
+              setLocalTemp(setTemp)
             }
           }
         })
@@ -221,7 +221,7 @@ export function Home() {
             if (params.confirm) {
               alertSetTemp(temp)
             } else {
-              // 有bug，待修复
+              setLocalTemp(setTemp)
             }
           }
         })
@@ -375,7 +375,8 @@ export function Home() {
           <View style={{width: '90%', fontSize: 'normal', marginTop: '8px', marginBottom: '8px'}}>Temperature Regulation</View>
           <View className={styles.tempNumRow} id='温度数值' >
             <Text className={styles.tempUnit} style={{opacity: 0}} >{unitText}</Text>
-            <Text className={styles.tempNum} >{isShowTempSetTemp?tempSetTemp:setTemp}</Text>
+            {/* <Text className={styles.tempNum} >{isShowTempSetTemp?tempSetTemp:localTemp}</Text> */}
+            <Text className={styles.tempNum} >{localTemp}</Text>
             <Text className={styles.tempUnit} >{unitText}</Text>
           </View>
 
@@ -409,7 +410,7 @@ export function Home() {
             <View className={styles.sectionItem_Slider}>
               <Slider
                 step={1}
-                value={setTemp}
+                value={localTemp}
                 min={setTempMin}
                 max={setTempMax}
                 maxTrackHeight='34px'
@@ -423,16 +424,17 @@ export function Home() {
                 thumbStyle={{marginRight:'4px',marginLeft:'4px'}}
                 disabled={disableMode}
                 onBeforeChange={(e) => {
-                  setIsShowTempSetTemp(true)
+                  // setIsShowTempSetTemp(true)
                 }}
                 onChange={(e) => {
-                  setTempSetTemp(e)
+                  // setTempSetTemp(e)
+                  setLocalTemp(e)
                 }}
                 onAfterChange={(e) => {
                   directSetTemp(e)
-                  setTimeout(() => {
-                    setIsShowTempSetTemp(false)
-                  }, 500)
+                  // setTimeout(() => {
+                  //   setIsShowTempSetTemp(false)
+                  // }, 500)
                 }}
               />
             </View>
