@@ -392,7 +392,7 @@ export function Stats() {
         setTotal(value.toString())
       })
     }
-  },[date,token,consumption], { wait: 500 })
+  },[date,token,consumption], { wait: 500 })//1000
 
   return (
     <View className={styles.view}>
