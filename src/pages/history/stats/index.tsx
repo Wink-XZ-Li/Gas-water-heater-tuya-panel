@@ -21,6 +21,7 @@ import styles from './index.module.less';
 import Svg from '@ray-js/svg';
 import { useDebounceEffect } from 'ahooks';
 import Popover from '@ray-js/components-ty-popover';
+import app from '@/app';
 
 interface DPInfo {
   type: 'water' | 'gas' | 'count' | 'time';
@@ -37,7 +38,8 @@ interface DPInfo {
 }
 
 const mizudoRed = '#d3233b' 
-
+// 燃气热值比例
+const calorificRatio = 37.37/93.1
 // 所有统计项信息
 const usage_dps: {[key: string]: DPInfo} = {
   dp_water: {
@@ -65,6 +67,16 @@ const usage_dps: {[key: string]: DPInfo} = {
     infoFront: 'You’ve used ',
     infoBack: 'minutes',
   },
+};
+
+type DataPoint = {
+  name: string;
+  value: number;
+};
+
+type DataObject = {
+  name: string;
+  data: DataPoint[];
 };
 
 export function Stats() {
@@ -292,7 +304,46 @@ export function Stats() {
     </View>
   )}
 
-  // water
+  // 根据气源转换热值
+  function multiplyValues(input: DataObject[]): DataObject[] {
+    var multiplier = 1
+    if (type.type==='gas') {
+      if (dpState['gas_type'] === 'LPG') {
+        multiplier = 37.78/105.5/calorificRatio
+      } else if (dpState['gas_type'] === 'NG') {
+        multiplier = 37.78/105.5
+      }
+      return input.map(obj => ({
+        ...obj,
+        data: obj.data.map(dataPoint => ({
+            ...dataPoint,
+            value: parseFloat((dataPoint.value * multiplier).toFixed(2)),
+        })),
+      }));
+    } else {
+      return input
+    }
+    
+}
+
+  // 将燃气体积转换为热值
+  function volumeToTherm(volume: number): number {
+    if (dpState['gas_type'] === 'LPG') {
+      return  parseFloat((volume*37.78/105.5/calorificRatio).toFixed(2))
+    } else if (dpState['gas_type'] === 'NG'){
+      return  parseFloat((volume*37.78/105.5).toFixed(2))
+    }
+  }
+
+  // 将total值转化为正确值
+  function getRealTotalValue(value: number): number {
+    if (type.type==='gas') {
+      return volumeToTherm(value)
+    } else {
+      return value
+    }
+  }
+
   useDebounceEffect(() => {
     if (token==='day'||token==='week') {
       getStatisticsRangDay({
@@ -303,12 +354,14 @@ export function Stats() {
         type: 'minux',
       })
       .then(res => {
-        console.log("day consumption: ", res)
+        // console.log("day consumption: ", res)
         if (token==='day') {
-          setTotal((parseFloat(res[startDateFormated])).toString())
+          const value = getRealTotalValue(parseFloat(res[startDateFormated]))
+          setTotal(value.toString())
         } else if (token==='week') {
           const total = Object.values(res).reduce((previousValue: string, currentValue: string) => (parseFloat(previousValue) + parseFloat(currentValue)).toString())
-          setTotal((parseFloat(total)).toString())
+          const value = getRealTotalValue(parseFloat(total))
+          setTotal(value.toString())
         }
       })
 
@@ -320,9 +373,10 @@ export function Stats() {
         endDay: endDateFormated,
         type: 'minux',
       }).then(res => {
-        console.log("month consumption: ", res)
+        // console.log("month consumption: ", res)
         const total = Object.values(res).reduce((previousValue: string, currentValue: string) => (parseFloat(previousValue) + parseFloat(currentValue)).toString())
-        setTotal((parseFloat(total)).toString())
+        const value = getRealTotalValue(parseFloat(total))
+        setTotal(value.toString())
       })
     } else if (token==='year') {
       getStatisticsRangMonth({
@@ -332,12 +386,13 @@ export function Stats() {
         endMonth: endDateFormated,
         type: 'minux',
       }).then(res => {
-        console.log("year consumption: ", res)
+        // console.log("year consumption: ", res)
         const total = Object.values(res).reduce((previousValue: string, currentValue: string) => (parseFloat(previousValue) + parseFloat(currentValue)).toString())
-        setTotal((parseFloat(total)).toString())
+        const value = getRealTotalValue(parseFloat(total))
+        setTotal(value.toString())
       })
     }
-  },[date,token,consumption], { wait: 1000 })
+  },[date,token,consumption], { wait: 500 })
 
   return (
     <View className={styles.view}>
@@ -360,6 +415,9 @@ export function Stats() {
             width={686}
             height={636}
             debounce={{ wait: 1000, leading: false, trailing: true }}
+            dataTransformer = {(originData: DataObject[]) => {
+              return multiplyValues(originData);
+            }}
             renderTitle={() => {
               return (
                 <View className={styles.powerInfo}>

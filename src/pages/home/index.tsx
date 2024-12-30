@@ -12,6 +12,8 @@ function Divider() {
   return (<View style={{height: '2px', width: '90%', backgroundColor: '#e9e9e9' }}></View>)
 }
 
+const errorMap = ['E0', 'E1', 'E2', 'E3', 'E4', 'E5', 'E6', 'E7', 'E8', 'En'];
+
 export function Home() {
   const dpSchema = useDpSchema();
   const devInfo = useDevInfo();
@@ -242,43 +244,18 @@ export function Home() {
   // fault alert
   React.useEffect(() => {
     const binaryFault = fault.toString(2).split('').reverse()
-    var title: ""
+    var content = '';
     if (fault !== 0) {
-      if (binaryFault[0]==='1') {
-        title = Strings.getLang('E0Title')
-        setErrorInfo('E0')
-      } else if (binaryFault[1]==='1') {
-        title = Strings.getLang('E1Title')
-        setErrorInfo('E1')
-      } else if (binaryFault[2]==='1') {
-        title = Strings.getLang('E2Title')
-        setErrorInfo('E2')
-      } else if (binaryFault[3]==='1') {
-        title = Strings.getLang('E3Title')
-        setErrorInfo('E3')
-      } else if (binaryFault[4]==='1') {
-        title = Strings.getLang('E4Title')
-        setErrorInfo('E4')
-      } else if (binaryFault[5]==='1') {
-        title = Strings.getLang('E5Title')
-        setErrorInfo('E5')
-      } else if (binaryFault[6]==='1') {
-        title = Strings.getLang('E6Title')
-        setErrorInfo('E6')
-      } else if (binaryFault[7]==='1') {
-        title = Strings.getLang('E7Title')
-        setErrorInfo('E7')
-      } else if (binaryFault[8]==='1') {
-        title = Strings.getLang('E8Title')
-        setErrorInfo('E8')
-      } else if (binaryFault[9]==='1') {
-        title = Strings.getLang('E9Title')
-        setErrorInfo('E9')
-      } else if (binaryFault[10]==='1') {
-        title = Strings.getLang('EnTitle')
-        setErrorInfo('En')
+      const faultIndex = binaryFault.findIndex(bit => bit === '1');
+      const errorIndex = faultIndex !== -1 && faultIndex < errorMap.length ? errorMap[faultIndex] : null;
+      if (errorIndex == null) {
+        return
       }
-      showModal({title: title, content: 'error content', showCancel: false, confirmText: Strings.getLang('confirm')})
+      const titleStr = "Error Code : "+errorIndex
+      const contentStr = errorIndex+'Content'
+      setErrorInfo(errorIndex)
+      content = Strings.getLang(contentStr)
+      showModal({title: titleStr, content: content, showCancel: false, confirmText: Strings.getLang('confirm')})
     } else {
       setErrorInfo('Normal');
     }
