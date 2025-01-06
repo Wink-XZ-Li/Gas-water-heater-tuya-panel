@@ -5,7 +5,7 @@ import { useActions, useDevInfo, useDpSchema, useProps } from "@ray-js/panel-sdk
 import styles from './topView.module.less';
 import Strings from '@/i18n';
 
-const MIZUDO_model: string[] = ['_ _', 'HW110A0W-NG', 'HW110A0W-LP', 'HW199A0W-NG', 'HW199A0W-LP'];
+const MIZUDO_model: string[] = ['_ _', 'HW180A0W-NG', 'HW180A0W-LP'];
 
 export default function TopView() {
     const dpSchema = useDpSchema();

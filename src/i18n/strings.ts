@@ -31,8 +31,8 @@ export default {
     E7Content: 'Solenoid valve fault',
     E8Content: 'Flue jam fault',
     EnContent: 'The set shutdown time has been reached',
-    hightTempWarm_f: 'The setting temperature has exceeded 122℉. Please confirm.',
-    hightTempWarm_c: 'The setting temperature has exceeded 50℃. Please confirm.',
+    hightTempWarm_f: 'The setting temperature has exceeded 120℉. Please confirm.',
+    hightTempWarm_c: 'The setting temperature has exceeded 49℃. Please confirm.',
     waterConsumption: 'Water Consumption',
 
     yes: 'YES',

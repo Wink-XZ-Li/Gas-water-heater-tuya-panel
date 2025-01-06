@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Text, View, ScrollView, navigateTo, Map, Image, showModal,Modal, setTabBarStyle, Button, Switch } from '@ray-js/ray';
+import { Text, View, ScrollView, navigateTo, Map, Image, showModal,Modal, setTabBarStyle, Button, Switch, getCurrentPages } from '@ray-js/ray';
 import { useActions, useDevInfo, useDpSchema, useProps } from "@ray-js/panel-sdk";
 import { TopBar } from '@/components';
 import styles from './index.module.less';
@@ -105,23 +105,11 @@ export function Home() {
 
   // 跳转到历史界面
   function navigateToHistory() {
-    throttle(() => {
+    const pages: Array<object> = getCurrentPages()
+    if (pages[pages.length-1].pageId === 'page_0') {
       navigateTo({url: '/pages/history/index'})
-      // navigateTo({url: '/pages/home/test/testConpoments'})
-    }, 700)()
-  }
-  
-  // 防抖
-  function throttle(func, delay) {
-    let timer = null;
-    return function() {
-      if (!timer) {
-        timer = setTimeout(() => {
-          func.apply(this, arguments);
-          timer = null;
-        }, delay);
-      }
-    };
+    }
+    console.log(pages)
   }
 
   // 降温
@@ -146,7 +134,7 @@ export function Home() {
   function increaseTemp2(temp: number) {
     const subTitle:string = unit==='c'?Strings.getLang('hightTempWarm_c'):Strings.getLang('hightTempWarm_f')
     if (unit==='c') {
-      if (temp===50) {
+      if (temp===49) {
         setIsPressingAdd(false)
         showModal({title: '', content: subTitle, showCancel: true, cancelText: Strings.getLang('no'), confirmText: Strings.getLang('yes'), 
           success: (params) => {
@@ -157,7 +145,7 @@ export function Home() {
         actions['temp_set'].set(temp)
       }
     } else {
-      if (temp===122) {
+      if (temp===120) {
         setIsPressingAdd(false)
         showModal({title: '', content: subTitle, showCancel: true, cancelText: Strings.getLang('no'), confirmText: Strings.getLang('yes'), 
           success: (params) => {
@@ -175,7 +163,7 @@ export function Home() {
   function increaseTemp() {
     const subTitle:string = unit==='c'?Strings.getLang('hightTempWarm_c'):Strings.getLang('hightTempWarm_f')
     if (unit==='c') {
-      if (temp_c===49) {
+      if (temp_c===48) {
         showModal({title: '', content: subTitle, showCancel: true, cancelText: Strings.getLang('no'), confirmText: Strings.getLang('yes'), 
           success: (params) => {
             if (params.confirm) {actions['temp_set'].set(temp_c+1)}
@@ -187,7 +175,7 @@ export function Home() {
       }
       
     } else {
-      if (temp_f===121) {
+      if (temp_f===119) {
         showModal({title: '', content: subTitle, showCancel: true, cancelText: Strings.getLang('no'), confirmText: Strings.getLang('yes'), 
           success: (params) => {
             if (params.confirm) {actions['temp_set_f'].set(temp_f+1)}
@@ -203,7 +191,7 @@ export function Home() {
   const subTitle:string = unit==='c'?Strings.getLang('hightTempWarm_c'):Strings.getLang('hightTempWarm_f')
   function directSetTemp(temp) {
     if (unit==='c') {
-      if (temp>=50) {
+      if (temp>=49) {
         showModal({title: '', content: subTitle, showCancel: true, cancelText: Strings.getLang('no'), confirmText: Strings.getLang('yes'), 
           success: (params) => {
             if (params.confirm) {
@@ -217,7 +205,7 @@ export function Home() {
         actions['temp_set'].set(temp)
       }
     } else {
-      if (temp>=122) {
+      if (temp>=120) {
         showModal({title: '', content: subTitle, showCancel: true, cancelText: Strings.getLang('no'), confirmText: Strings.getLang('yes'), 
           success: (params) => {
             if (params.confirm) {
