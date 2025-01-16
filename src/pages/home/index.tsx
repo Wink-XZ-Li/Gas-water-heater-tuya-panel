@@ -163,7 +163,7 @@ export function Home() {
   function increaseTemp() {
     const subTitle:string = unit==='c'?Strings.getLang('hightTempWarm_c'):Strings.getLang('hightTempWarm_f')
     if (unit==='c') {
-      if (temp_c===48) {
+      if (temp_c===49) {
         showModal({title: '', content: subTitle, showCancel: true, cancelText: Strings.getLang('no'), confirmText: Strings.getLang('yes'), 
           success: (params) => {
             if (params.confirm) {actions['temp_set'].set(temp_c+1)}
@@ -175,7 +175,7 @@ export function Home() {
       }
       
     } else {
-      if (temp_f===119) {
+      if (temp_f===120) {
         showModal({title: '', content: subTitle, showCancel: true, cancelText: Strings.getLang('no'), confirmText: Strings.getLang('yes'), 
           success: (params) => {
             if (params.confirm) {actions['temp_set_f'].set(temp_f+1)}
@@ -388,18 +388,11 @@ export function Home() {
                 thumbHeight={26}
                 thumbStyle={{marginRight:'4px',marginLeft:'4px'}}
                 disabled={disableMode}
-                onBeforeChange={(e) => {
-                  // setIsShowTempSetTemp(true)
-                }}
                 onChange={(e) => {
-                  // setTempSetTemp(e)
                   setLocalTemp(e)
                 }}
                 onAfterChange={(e) => {
                   directSetTemp(e)
-                  // setTimeout(() => {
-                  //   setIsShowTempSetTemp(false)
-                  // }, 500)
                 }}
               />
             </View>
