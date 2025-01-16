@@ -9,9 +9,9 @@ import {
   getStatisticsRangMonth,
   showLoading,
   hideLoading,
-  Picker,
-  Icon
+  Picker
 } from '@ray-js/ray';
+import { Icon } from '@ray-js/icons';
 import StatCharts from '@ray-js/stat-charts';
 import { useDevice, useProps } from '@ray-js/panel-sdk';
 import Strings from '@/i18n';
@@ -35,6 +35,7 @@ interface DPInfo {
   infoBack: string;
   color?: string;
   notes?: string;
+  toFixed: number;
 }
 
 const mizudoRed = '#d3233b' 
@@ -47,25 +48,29 @@ const usage_dps: {[key: string]: DPInfo} = {
     icon: 'icon-a-dropfill',
     infoFront: 'You’ve used ',
     infoBack: 'G',
-    notes: "Under normal operation, there's a ±15% tolerance in water consumption monitoring."
+    notes: "Under normal operation, there's a ±15% tolerance in water consumption monitoring.",
+    toFixed: 1
   },
   dp_gas: {
     type: 'gas', name: 'Gas Usage', key: 'gas_consumption', unit: 'Therms', id: 24, unitText: 'Therms',
     icon: 'icon-a-flamefill',
     infoFront: 'You’ve used',
     infoBack: 'Therms',
+    toFixed: 2
   },
   dp_count: {
     type: 'count', name: 'Usage Count', key: 'usage_count', unit: 'Count', id: 101, unitText: 'Count',
     icon: 'icon-repeat',
     infoFront: 'You’ve activated',
     infoBack: 'times',
+    toFixed: 0
   },
   dp_time: {
     type: 'time', name: 'Usage Time', key: 'usage_time', unit: 'Minute', id: 102, unitText: 'Minute',
     icon: 'icon-a-stopwatchfill',
     infoFront: 'You’ve used ',
     infoBack: 'minutes',
+    toFixed: 0
   },
 };
 
@@ -86,7 +91,13 @@ export function Stats() {
   const [type, setType] = useState(usage_dps.dp_water);
 
   // 总用水量，总用电量，总使用次数，总使用时间
-  const [total, setTotal] = useState<string>('0.0');
+  // const [total, setTotal] = useState<string>('_ _');
+  const [totalUsage, setTotalUsage] = useState<object>({
+    'water': '_ _',
+    'gas': '_ _',
+    'count': '_ _',
+    'time': '_ _',
+  });
   const totalSchema = useDevice(devInfo => devInfo.dpSchema[type.key]);
   const devId = useDevice(d => d.devInfo.devId);
   const dpState = useProps(state => state); // 获取所有dpState
@@ -351,17 +362,21 @@ export function Stats() {
         dpId: type.id,
         startDay: startDateFormated,
         endDay: endDateFormated,
-        type: 'minux',
+        type: 'sum',
       })
       .then(res => {
         // console.log("day consumption: ", res)
         if (token==='day') {
-          const value = getRealTotalValue(parseFloat(res[startDateFormated]))
-          setTotal(value.toString())
+          const value = getRealTotalValue(parseFloat(res[startDateFormated])).toFixed(type.toFixed)
+          var obj = totalUsage
+          obj[type.type] = value.toString()
+          setTotalUsage(obj)
         } else if (token==='week') {
           const total = Object.values(res).reduce((previousValue: string, currentValue: string) => (parseFloat(previousValue) + parseFloat(currentValue)).toString())
-          const value = getRealTotalValue(parseFloat(total))
-          setTotal(value.toString())
+          const value = getRealTotalValue(parseFloat(total)).toFixed(type.toFixed)
+          var obj = totalUsage
+          obj[type.type] = value.toString()
+          setTotalUsage(obj)
         }
       })
 
@@ -371,12 +386,14 @@ export function Stats() {
         dpId: totalSchema.id,
         startDay: startDateFormated,
         endDay: endDateFormated,
-        type: 'minux',
+        type: 'sum',
       }).then(res => {
         // console.log("month consumption: ", res)
         const total = Object.values(res).reduce((previousValue: string, currentValue: string) => (parseFloat(previousValue) + parseFloat(currentValue)).toString())
-        const value = getRealTotalValue(parseFloat(total))
-        setTotal(value.toString())
+        const value = getRealTotalValue(parseFloat(total)).toFixed(type.toFixed)
+        var obj = totalUsage
+        obj[type.type] = value.toString()
+        setTotalUsage(obj)
       })
     } else if (token==='year') {
       getStatisticsRangMonth({
@@ -384,12 +401,14 @@ export function Stats() {
         dpId: totalSchema.id,
         startMonth: startDateFormated,
         endMonth: endDateFormated,
-        type: 'minux',
+        type: 'sum',
       }).then(res => {
         // console.log("year consumption: ", res)
         const total = Object.values(res).reduce((previousValue: string, currentValue: string) => (parseFloat(previousValue) + parseFloat(currentValue)).toString())
-        const value = getRealTotalValue(parseFloat(total))
-        setTotal(value.toString())
+        const value = getRealTotalValue(parseFloat(total)).toFixed(type.toFixed)
+        var obj = totalUsage
+        obj[type.type] = value.toString()
+        setTotalUsage(obj)
       })
     }
   },[date,token,consumption], { wait: 500 })//1000
@@ -408,7 +427,7 @@ export function Stats() {
             unit={type.unit}
             range={range}
             // @ts-ignore
-            type='minux'
+            type='sum'
             startDate={startDateFormated}
             endDate={endDateFormated}
             chartType="bar"
@@ -430,7 +449,7 @@ export function Stats() {
                   
                   <Text style={{paddingLeft: '4px'}}>
                     <Text style={{fontSize: '20px', paddingLeft: 8}}>{type.infoFront}</Text>
-                    <Text style={{color: mizudoRed, fontSize: '25px', paddingLeft:10, paddingRight:10, fontWeight: 'bold'}}>{total}</Text>
+                    <Text style={{color: mizudoRed, fontSize: '25px', paddingLeft:10, paddingRight:10, fontWeight: 'bold'}}>{totalUsage[type.type]}</Text>
                     <Text style={{fontSize: '20px'}}>{type.infoBack}</Text>
                   </Text>
                 </View>

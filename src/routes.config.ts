@@ -11,9 +11,4 @@ export const routes: Routes = [
     path: '/pages/history/index',
     name: 'History',
   },
-  {
-    route: '/',
-    path: '/pages/home/test/testConpoments',
-    name: 'Home2',
-  },
 ];

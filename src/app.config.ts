@@ -11,8 +11,6 @@ export const thing = {
   "pages": [
     "pages/home/index",
     "pages/history/index",
-    "pages/home/components/TopView/topView",
-    "pages/home/test/testConpoments"
   ]
 };
 
