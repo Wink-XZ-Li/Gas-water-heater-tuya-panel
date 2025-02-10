@@ -2334,10 +2334,10 @@
   dependencies:
     "@ray-js/api" "1.6.12"
 
-"@ray-js/circle-progress@0.0.10-beta-1":
-  version "0.0.10-beta-1"
-  resolved "https://registry.yarnpkg.com/@ray-js/circle-progress/-/circle-progress-0.0.10-beta-1.tgz#a9a6485f95e01248dd100eb3de079857c4701ca8"
-  integrity sha512-qgftdUHcF3v1/oscH+bjNeGTCKaM6U7FN07xTHQMZ/uMExhL0hIKDciuPHCuZ01LN8wYTCSz83j1jpVagWBzcQ==
+"@ray-js/circle-progress@0.0.11-beta-1":
+  version "0.0.11-beta-1"
+  resolved "https://registry.yarnpkg.com/@ray-js/circle-progress/-/circle-progress-0.0.11-beta-1.tgz#0fecbc4cb4b5d676cd42a48f1b55001df1a465a8"
+  integrity sha512-zMNQzKYSkEiPprRbhVbQuy6fj9XE48Tz1oxsZ/yfwtQ1S0IIWbBqX2VSkX+yJ3QN0atDooQPmcYi62fDPWkJ6w==
 
 "@ray-js/cli@^1.4.45":
   version "1.5.27"

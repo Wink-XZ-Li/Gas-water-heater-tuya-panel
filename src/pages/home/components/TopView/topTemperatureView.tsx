@@ -5,19 +5,18 @@ import { useActions, useDevInfo, useDpSchema, useProps } from "@ray-js/panel-sdk
 import styles from './topTemperatureView.module.less';
 import Strings from '@/i18n';
 import RayCircleProgress from '@ray-js/circle-progress';
+import { fahrenheitTemps } from '../..';
 
-const productConfig = {
-    setTempMin_c:30,
-    setTempMax_c:60,
-    setTempMin_f:86,
-    setTempMax_f:140,
-    isShowAntiFreeze: false,
-    iconWidth: 23,
-    iconStyle: styles.icon1,
+interface ChildComponentProps {
+    localTempPrt: number; // 状态值
+    setLocalTempPrt: React.Dispatch<React.SetStateAction<number>>; // 更新函数
+    // setIsShowLocalTemp: React.Dispatch<React.SetStateAction<boolean>>; // 更新函数
 }
 
-export default function TopTemperatureView() {
+export default function TopTemperatureView(prob: ChildComponentProps) {
+    // 使用useDpSchema获取dpSchema
     const dpSchema = useDpSchema();
+    // 使用useDevInfo获取devInfo
     const devInfo = useDevInfo();
     const dpState = useProps(state => state); // 获取所有dpState
     const actions = useActions();
@@ -26,46 +25,27 @@ export default function TopTemperatureView() {
     const unit = dpState["temp_unit_convert"]
     const temp_c = dpState['temp_set']
     const temp_f = dpState['temp_set_f']
-    const heating = dpState['heating']
-    const flow = dpState['flow']
-    const antiFreeze = dpState['anti_freeze']
+    const outletTemp_c = dpState['temp_effluent']
+    const outletTemp_f = dpState['temp_effluent_f']
+    const outletTemp = unit==='c'?outletTemp_c:outletTemp_f
 
     const setTemp = unit==='c'?temp_c:temp_f
 
-    const activeIconColor = '#295bdd'//'rgb(135,88,128)'
-    const lazyIconColor = '#a5a5a5'
-    const iconHeatColor = heating ? activeIconColor:lazyIconColor
-    const iconFlowColor = flow ? activeIconColor:lazyIconColor
-    const iconAntiFreezeColor = antiFreeze ? activeIconColor:lazyIconColor
+    const [tempForBug,setTempForBug] = useState(setTemp)
+
     const fault = dpState['fault']
 
     const tempColor = (!switch_power || fault !== 0) ? '#282828':'#000000'
     
-    if (devInfo['productId'] === "nohrp3vbmef7vxvx") {
-        productConfig.setTempMin_c = 30;
-        productConfig.setTempMax_c = 60;
-        productConfig.setTempMin_f = 86;
-        productConfig.setTempMax_f = 140;
-        productConfig.isShowAntiFreeze = false;
-        productConfig.iconWidth = 46;
-        productConfig.iconStyle = styles.icon1;
-    } else if (devInfo['productId'] === "afvzbrc0qqvgaz8a") {
-        productConfig.setTempMin_c = 26;
-        productConfig.setTempMax_c = 55;
-        productConfig.setTempMin_f = 80;
-        productConfig.setTempMax_f = 130;
-        productConfig.isShowAntiFreeze = false;
-        productConfig.iconWidth = 46;
-        productConfig.iconStyle = styles.icon2;
-    }
+    const setTempMin = unit==='c' ? 35 : 95;
+    const setTempMax = unit==='c' ? 65 : 149;
 
-    const setTempMin:number = unit==='c'?productConfig.setTempMin_c:productConfig.setTempMin_f
-    const setTempMax:number = unit==='c'?productConfig.setTempMax_c:productConfig.setTempMax_f
-    
-    const [localTempPrt, setLocalTempPrt] = useState(0);
+    const disable = !switch_power || (fault !== 0)
     
     useEffect(() => {
-        setLocalTempPrt(tempToProgress(setTemp))
+        prob.setLocalTempPrt(tempToProgress(setTemp))
+        setTempForBug(setTemp)
+        console.log('setTempForBug: ', tempForBug);
     }, [setTemp]);
 
     const tempUnit = () : string => {
@@ -80,43 +60,65 @@ export default function TopTemperatureView() {
 
     const subTitle:string = unit==='c'?Strings.getLang('hightTempWarm_c'):Strings.getLang('hightTempWarm_f')
     
+    // 处理温度环移动事件
     const handleMove = (v: number) => {
-        // console.log('handleMove', v);
-        setLocalTempPrt(v);
+        // prob.setIsShowLocalTemp(true);
+        // 设置本地温度
+        prob.setLocalTempPrt(v)
         
     };
     
+    // 处理温度环结束函数
     const handleEnd = (v: number) => {
-        console.warn('handleEnd', v);
-        setLocalTempPrt(v);
+        // prob.setIsShowLocalTemp(false);
+        // 设置本地温度
+        prob.setLocalTempPrt(v)
+        // 根据进度设置温度
         directSetTemp(Math.floor(progressToTemp(v)));
     };
 
     // 进度条值 -> 温度值
     function progressToTemp(progress: number): number {
-        return (
-            setTempMin +
-            (progress) * (setTempMax - setTempMin) / (100)
-        );
+        if (unit==='c') {
+            return Math.floor(
+                setTempMin +
+                (progress) * (setTempMax - setTempMin) / (100)
+            )
+        } else {
+            const index = Math.round(progress / 100 * (fahrenheitTemps.length - 1));
+            return fahrenheitTemps[index];
+        }
     }
     
     // 温度值 -> 进度条值
     function tempToProgress(temp: number): number {
-        return (
-            (temp - setTempMin) * (100) / (setTempMax - setTempMin)
-        );
+        if (unit==='c') {
+            return (
+                (temp - setTempMin) * (100) / (setTempMax - setTempMin)
+            );
+        } else {
+            const index = fahrenheitTemps.indexOf(temp);
+            return index !== -1 ? (index / (fahrenheitTemps.length - 1)) * 100 : 0;
+        }
     }
 
     function directSetTemp(value: number) {
         if (unit==='c') {
-            if (value>=50) {
-                // if (value == (unit==='c'?temp_c:temp_f)) {return}
-                showModal({title: '', content: subTitle, showCancel: true, cancelText: Strings.getLang('no'), confirmText: Strings.getLang('yes'), 
+            if (value>=49) {
+                // showModal({title: '', content: subTitle, showCancel: true, cancelText: Strings.getLang('no'), confirmText: Strings.getLang('yes'), 
+                //     success: (params) => {
+                //         if (params.confirm) {
+                //             alertSetTemp(value)
+                //         } else if (params.cancel) {
+                //             console.log('tempForBug: ', tempForBug);
+                //             prob.setLocalTempPrt(Math.floor(tempToProgress(tempForBug)))
+                //         }
+                //     }
+                // })
+                showModal({title: '', content: subTitle, showCancel: false, confirmText: Strings.getLang('yes'), 
                     success: (params) => {
                         if (params.confirm) {
                             alertSetTemp(value)
-                        } else {
-                            setLocalTempPrt(Math.floor(tempToProgress(setTemp)))
                         }
                     }
                 })
@@ -124,14 +126,20 @@ export default function TopTemperatureView() {
                 actions['temp_set'].set(value)
             }
         } else {
-            if (value>=122) {
-                // if (value == (unit==='c'?temp_c:temp_f)) {return}
-                showModal({title: '', content: subTitle, showCancel: true, cancelText: Strings.getLang('no'), confirmText: Strings.getLang('yes'), 
+            if (value>=120) {
+                // showModal({title: '', content: subTitle, showCancel: true, cancelText: Strings.getLang('no'), confirmText: Strings.getLang('yes'), 
+                //     success: (params) => {
+                //         if (params.confirm) {
+                //             alertSetTemp(value)
+                //         } else {
+                //             prob.setLocalTempPrt(Math.floor(tempToProgress(setTemp)))
+                //         }
+                //     }
+                // })
+                showModal({title: '', content: subTitle, showCancel: false, confirmText: Strings.getLang('yes'), 
                     success: (params) => {
                         if (params.confirm) {
                             alertSetTemp(value)
-                        } else {
-                            setLocalTempPrt(Math.floor(tempToProgress(setTemp)))
                         }
                     }
                 })
@@ -159,7 +167,7 @@ export default function TopTemperatureView() {
                     justifyContent: 'center',
                 }}
             >
-                {switch_power&&<Svg width="100%" height='100%' viewBox='0 0 160 160'>
+                {!disable&&<Svg width="100%" height='100%' viewBox='0 0 160 160'>
                     <defs>
                     <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
                         <feGaussianBlur in="SourceAlpha" stdDeviation="1" />
@@ -184,12 +192,12 @@ export default function TopTemperatureView() {
             {/* 圆环前景 */}
             <View
                 style={{
-                    pointerEvents: !switch_power ? 'none' : 'auto', // 根据条件禁用/启用点击事件
+                    pointerEvents: disable ? 'none' : 'auto', // 根据条件禁用/启用点击事件
                 }}
             >
             <RayCircleProgress
                 className={styles.circle}
-                value={localTempPrt}
+                value={prob.localTempPrt}
                 ringRadius={135}
                 innerRingRadius={111}
                 colorList={[
@@ -205,7 +213,7 @@ export default function TopTemperatureView() {
                 onTouchMove={handleMove}
                 onTouchEnd={handleEnd}
                 renderInnerCircle={() => (
-                    !switch_power&&
+                    disable&&
                     <View 
                         style={{width: 565,height: 565}}
                         
@@ -242,54 +250,16 @@ export default function TopTemperatureView() {
             />
             </View>
             
+            {/* logo */}
             <View className={styles.tempAndIcons}>
+                <BrandView/>
                 {/* set temperture */}
-                <Text className={styles.setTemp} onClick={() => {}}>{Strings.getLang('setTemp')}</Text>
+                <Text className={styles.setTemp} onClick={() => {}}>Outlet Temp</Text>
                 {/* 温度数值 */}
                 <View className={styles.temp} >
-                    <Text className={styles.tempNum} style={{color: tempColor}}>{Math.floor(progressToTemp(localTempPrt))}</Text>
+                <Text className={styles.tempUnit} style={{opacity: 0}}>{tempUnit()}</Text>
+                    <Text className={styles.tempNum} style={{color: tempColor}}>{(outletTemp || '_ _')}</Text>
                     <Text className={styles.tempUnit} style={{color: tempColor}}>{tempUnit()}</Text>
-                </View>
-                {/* 状态图标 */}
-                <View className={styles.icons}>
-                    <Svg className={productConfig.iconStyle} width={productConfig.iconWidth} height={productConfig.iconWidth} viewBox="0 0 20 20">
-                        <path fill={iconFlowColor} d='m13.42,11.44c-.41-2.25-.33-3.61-.32-3.71l1.88.14s-.07,1.28.32,3.37c-.61.08-1.24.15-1.89.2m-9.16,1.92c-.3,1.05-.7,2.21-1.24,3.47l1.73.75c.64-1.46,1.09-2.81,1.41-4.01-.65-.06-1.28-.13-1.91-.21m5.74.38c-.32,0-.63-.01-.95-.02v4.52h1.89v-4.52c-.32,0-.62.02-.94.02m5.82-.38c.3,1.05.7,2.21,1.24,3.47l-1.73.75c-.64-1.46-1.09-2.81-1.42-4.01.65-.06,1.29-.13,1.91-.21m-4.87-1.8v-3.75h-1.89v3.75c.32,0,.62.02.95.02s.63-.01.94-.02m-4.29-.12c.41-2.25.32-3.61.32-3.71l-1.89.14s.07,1.28-.32,3.37c.61.08,1.24.15,1.89.2m4.63-7.27V1.77h-2.58v2.38c-3.88.12-6.21.92-6.21.92v1.03h15v-1.03c-2.27-.54-4.36-.8-6.21-.89'></path>
-                    </Svg>
-                    <Svg className={productConfig.iconStyle} width={productConfig.iconWidth} height={productConfig.iconWidth} viewBox="0 0 20 20">
-                        <path fill={iconHeatColor} d="m3.48,18.13l-.46-1.42c.1-.03,2.45-.85,2.45-3.2,0-1.27-.68-2.22-1.39-3.23-.77-1.09-1.57-2.23-1.57-3.79,0-3.18,3.29-4.55,3.43-4.6l.56,1.38s-2.5,1.05-2.5,3.22c0,1.09.6,1.95,1.3,2.93.78,1.1,1.66,2.35,1.66,4.09,0,2.76-2.27,4.23-3.48,4.62Z"/>
-                        <path fill={iconHeatColor} d="m8.75,18.13l-.46-1.42c.1-.03,2.45-.85,2.45-3.2,0-1.27-.68-2.22-1.39-3.23-.77-1.09-1.57-2.23-1.57-3.79,0-3.18,3.29-4.55,3.43-4.6l.56,1.38s-2.5,1.05-2.5,3.22c0,1.09.6,1.95,1.3,2.93.78,1.1,1.66,2.35,1.66,4.09,0,2.76-2.27,4.23-3.48,4.62Z"/>
-                        <path fill={iconHeatColor} d="m14.02,18.13l-.46-1.42c.1-.03,2.45-.85,2.45-3.2,0-1.27-.68-2.22-1.39-3.23-.77-1.09-1.57-2.23-1.57-3.79,0-3.18,3.29-4.55,3.43-4.6l.56,1.38s-2.5,1.05-2.5,3.22c0,1.09.6,1.95,1.3,2.93.78,1.1,1.66,2.35,1.66,4.09,0,2.76-2.27,4.23-3.48,4.62Z"/>
-                    </Svg>
-                    <Svg className={productConfig.iconStyle} width={productConfig.iconWidth} height={productConfig.iconWidth} viewBox="0 0 20 20">
-                        <path fill={activeIconColor} d="m9.09,15.68l.9,1.48.89-1.46c-.55-.34-1.24-.35-1.8-.01Z"/>
-                        <path fill={activeIconColor} d="m13.19,11.94c-1.98-1.11-4.4-1.11-6.38,0l.9,1.48c1.42-.78,3.15-.78,4.57,0l.9-1.48Z"/>
-                        <path fill={activeIconColor} d="m15.46,8.22c-3.37-1.96-7.56-1.96-10.93,0l.9,1.48c2.81-1.63,6.29-1.6,9.1.02l.92-1.51Z"/>
-                        <path fill={activeIconColor} d="m16.59,6.36l.91-1.48c-4.61-2.72-10.39-2.72-15,.01l.9,1.48c4.06-2.39,9.13-2.4,13.19-.01Z"/>
-                    </Svg>
-                    {
-                        productConfig.isShowAntiFreeze 
-                        && 
-                        <Svg className={productConfig.iconStyle} width={productConfig.iconWidth} height={productConfig.iconWidth} viewBox="0 0 441.64 529.42">
-                            <g>
-                                <path fill={iconAntiFreezeColor} fill-rule='nonzero' d="M49.89 301.05l0 -184.09 25 0 0 184.09 0 0 -25 0zm166.22 160.32l9.21 23.24 -9.21 0 -13.65 -5.67 -12.91 -5.82 -12.18 -5.98 -11.46 -6.12 -10.77 -6.23 -10.11 -6.36 -9.44 -6.43 -8.82 -6.5 -8.23 -6.57 -7.63 -6.62 -7.06 -6.64 -6.52 -6.65 -5.98 -6.65 -5.47 -6.61 -5 -6.59 -4.51 -6.53 -4.07 -6.44 -3.65 -6.35 -3.24 -6.24 -2.86 -6.11 -2.49 -5.96 -2.16 -5.78 -1.83 -5.59 -1.55 -5.4 -1.29 -5.18 -1.02 -4.92 -0.81 -4.67 -0.61 -4.41 -0.43 -4.1 -0.28 -3.81 -0.14 -3.48 -0.05 -3.15 25 0 0.03 2.43 0.12 2.74 0.22 3.03 0.35 3.32 0.49 3.57 0.67 3.83 0.84 4.06 1.05 4.28 1.29 4.48 1.55 4.69 1.8 4.86 2.11 5.02 2.42 5.17 2.76 5.32 3.11 5.43 3.51 5.56 3.91 5.65 4.34 5.73 4.81 5.81 5.28 5.87 5.78 5.91 6.32 5.94 6.87 5.96 7.45 5.95 8.06 5.94 8.68 5.91 9.33 5.86 10.01 5.79 10.72 5.72 11.42 5.62 12.19 5.5 12.94 5.37 -9.21 0zm9.21 23.24l-4.6 1.83 -4.61 -1.83 9.21 0zm141.21 -183.55l25 0 0 0 -0.05 3.15 -0.14 3.48 -0.28 3.81 -0.43 4.1 -0.61 4.4 -0.8 4.68 -1.03 4.93 -1.28 5.16 -1.54 5.39 -1.84 5.61 -2.16 5.78 -2.49 5.96 -2.86 6.11 -3.24 6.24 -3.65 6.35 -4.07 6.44 -4.51 6.53 -5 6.58 -5.47 6.62 -5.98 6.65 -6.52 6.65 -7.06 6.64 -7.63 6.61 -8.21 6.57 -8.83 6.51 -9.46 6.44 -10.1 6.34 -10.77 6.24 -11.47 6.11 -12.17 5.98 -12.91 5.82 -13.65 5.67 -9.21 -23.24 12.94 -5.37 12.19 -5.5 11.43 -5.62 10.71 -5.71 10.01 -5.8 9.34 -5.86 8.68 -5.9 8.05 -5.95 7.45 -5.95 6.87 -5.95 6.32 -5.94 5.78 -5.91 5.28 -5.87 4.81 -5.82 4.34 -5.72 3.91 -5.65 3.51 -5.56 3.11 -5.43 2.76 -5.32 2.42 -5.17 2.11 -5.02 1.8 -4.86 1.54 -4.67 1.28 -4.49 1.06 -4.3 0.85 -4.05 0.66 -3.82 0.49 -3.58 0.35 -3.32 0.22 -3.03 0.12 -2.74 0.03 -2.43 0 0zm25 -184.1l0 184.1 -25 0 0 -184.1 12.55 -12.5 12.45 12.5zm-12.45 -12.5l12.45 0.05 0 12.45 -12.45 -12.5zm-150.59 -21.68l-15.57 -19.56 15.57 0.01 1.53 1.16 1.79 1.29 2.05 1.39 2.3 1.48 2.5 1.51 2.77 1.59 2.99 1.64 3.18 1.67 3.41 1.69 3.64 1.72 3.82 1.73 4.03 1.73 4.22 1.73 4.4 1.7 4.59 1.68 4.78 1.64 4.97 1.61 5.14 1.57 5.31 1.52 5.48 1.44 5.63 1.38 5.82 1.3 5.96 1.22 6.11 1.11 6.28 1.02 6.43 0.92 6.56 0.8 6.71 0.67 6.85 0.55 6.98 0.4 7.11 0.26 7.25 0.11 -0.1 25 -7.79 -0.11 -7.65 -0.28 -7.52 -0.44 -7.37 -0.59 -7.23 -0.73 -7.08 -0.86 -6.91 -0.98 -6.76 -1.1 -6.61 -1.21 -6.44 -1.32 -6.28 -1.4 -6.11 -1.48 -5.94 -1.58 -5.75 -1.64 -5.58 -1.69 -5.39 -1.75 -5.22 -1.8 -5.03 -1.84 -4.84 -1.88 -4.64 -1.89 -4.45 -1.91 -4.24 -1.91 -4.04 -1.92 -3.85 -1.91 -3.66 -1.91 -3.41 -1.88 -3.23 -1.85 -3.04 -1.85 -2.79 -1.8 -2.61 -1.75 -2.39 -1.73 -2.21 -1.7 15.57 0.01zm-15.57 -19.56l7.79 -6.2 7.78 6.21 -15.57 -0.01zm-138.03 53.74l-25 0 12.45 -12.5 7.25 -0.11 7.1 -0.26 6.99 -0.41 6.84 -0.54 6.7 -0.68 6.57 -0.8 6.43 -0.92 6.27 -1.02 6.12 -1.12 5.96 -1.22 5.8 -1.29 5.66 -1.39 5.48 -1.44 5.3 -1.51 5.14 -1.57 4.96 -1.6 4.78 -1.66 4.61 -1.68 4.4 -1.7 4.22 -1.73 4.02 -1.71 3.82 -1.74 3.64 -1.71 3.41 -1.7 3.2 -1.66 2.96 -1.63 2.77 -1.6 2.53 -1.53 2.3 -1.47 2.03 -1.38 1.79 -1.29 1.53 -1.17 15.57 19.56 -2.21 1.69 -2.39 1.73 -2.63 1.76 -2.79 1.79 -3.01 1.83 -3.23 1.86 -3.44 1.89 -3.64 1.9 -3.85 1.92 -4.04 1.91 -4.24 1.92 -4.46 1.91 -4.64 1.89 -4.84 1.86 -5.01 1.84 -5.22 1.8 -5.4 1.76 -5.58 1.69 -5.76 1.65 -5.94 1.56 -6.1 1.49 -6.28 1.41 -6.44 1.3 -6.6 1.22 -6.77 1.1 -6.91 0.98 -7.07 0.86 -7.24 0.74 -7.36 0.58 -7.51 0.45 -7.66 0.28 -7.79 0.11 12.45 -12.5zm-25 0l0 -12.45 12.45 -0.05 -12.45 12.5z"/>
-                            </g>
-                            <g>
-                                <line fill='none' stroke={iconAntiFreezeColor} stroke-width='20' stroke-miterlimit='22.9256' x1="220.71" y1="166.65" x2="220.71" y2= "388.95" />
-                                <line fill='none' stroke={iconAntiFreezeColor} stroke-width='20' stroke-miterlimit='22.9256' x1="254.96" y1="181.25" x2="220.71" y2= "215.44" />
-                                <line fill='none' stroke={iconAntiFreezeColor} stroke-width='20' stroke-miterlimit='22.9256' x1="317.87" y1="223.9" x2="220.71" y2= "272.98" />
-                                <polyline fill='none' stroke={iconAntiFreezeColor} stroke-width='20' stroke-miterlimit='22.9256' points="320.61,261.06 275.94,245.07 289.2,200.14 "/>
-                                <line fill='none' stroke={iconAntiFreezeColor} stroke-width='20' stroke-miterlimit='22.9256' x1="324.32" y1="325.78" x2="220.71" y2= "272.98" />
-                                <polyline fill='none' stroke={iconAntiFreezeColor} stroke-width='20' stroke-miterlimit='22.9256' points="293.16,348.3 277.69,302.02 324.59,287.38 "/>
-                                <line fill='none' stroke={iconAntiFreezeColor} stroke-width='20' stroke-miterlimit='22.9256' x1="254.96" y1="371.57" x2="220.71" y2= "337.19" />
-                            </g>
-                            <line fill='none' stroke={iconAntiFreezeColor} stroke-width='20' stroke-miterlimit='22.9256' x1="186.45" y1="181.25" x2="220.71" y2= "215.44" />
-                            <line fill='none' stroke={iconAntiFreezeColor} stroke-width='20' stroke-miterlimit='22.9256' x1="123.54" y1="223.9" x2="220.71" y2= "272.98" />
-                            <polyline fill='none' stroke={iconAntiFreezeColor} stroke-width='20' stroke-miterlimit='22.9256' points="120.8,261.06 165.47,245.07 152.21,200.14 "/>
-                            <line fill='none' stroke={iconAntiFreezeColor} stroke-width='20' stroke-miterlimit='22.9256' x1="117.09" y1="325.78" x2="220.71" y2= "272.98" />
-                            <polyline fill='none' stroke={iconAntiFreezeColor} stroke-width='20' stroke-miterlimit='22.9256' points="148.25,348.3 163.72,302.02 116.82,287.38 "/>
-                            <line fill='none' stroke={iconAntiFreezeColor} stroke-width='20' stroke-miterlimit='22.9256' x1="186.45" y1="371.57" x2="220.71" y2= "337.19" />
-                        </Svg>
-                    }
                 </View>
             </View>
         </View>
@@ -298,4 +268,32 @@ export default function TopTemperatureView() {
     return (
         cricleView
     )
+}
+
+function BrandView() {
+    const devInfo = useDevInfo();
+    if (devInfo['productId'] === "zb7g4ffimeyqwvxt") {
+        return(<Svg width='200' height='100' className={styles.brand} viewBox="0 0 3620.64 352.8">
+            <g>
+                <polygon fill='#D42942' fill-rule='nonzero' points="927.59,0.02 804.87,346.1 598.98,346.1 708.27,63.73 452.09,346.1 320.61,346.1 256.23,59.71 165.67,346.1 -0,346.1 122.1,0.02 416.53,0.02 464.12,179.76 631.16,0.02 "/>
+                <polygon fill='#D42942' fill-rule='nonzero' points="1203.02,0.02 1078.91,346.1 867.68,346.1 991.74,0.02 "/>
+                <polygon fill='#D42942' fill-rule='nonzero' points="1736.81,268.96 1711.3,346.11 1149.29,346.11 1172.78,274.99 1530.92,75.14 1256.6,75.14 1281.44,0 1809.27,0 1787.11,65.05 1420.22,268.96 "/>
+                <path fill='#D42942' fill-rule='nonzero' d="M2432.68 0.02l-71.08 213.92c-12.07,36.23 -28.08,63.08 -47.95,80.51 -19.89,17.43 -52.67,31.5 -98.24,42.23 -45.62,10.76 -99.95,16.12 -162.99,16.12 -81.84,0 -145.55,-8.72 -191.13,-26.14 -45.62,-17.47 -68.44,-42.48 -68.44,-75.14 0,-11.19 2.47,-23.68 7.37,-37.58l71.12 -213.92 210.57 0 -70.41 213.92c-4.02,11.68 -6.03,20.4 -6.03,26.18 0,10.3 8.5,18.59 25.47,24.84 17,6.24 37.32,9.34 61.06,9.34 30.38,0 53.31,-3.77 68.72,-11.35 15.46,-7.62 26.96,-22.83 34.54,-45.62l72.43 -217.31 164.99 0z"/>
+                <path fill='#D42942' fill-rule='nonzero' d="M2390.1 346.1l107.32 -346.08 213.96 0c51.4,0 93.23,2.01 125.41,6.03 32.21,4.02 63.39,12.74 93.55,26.14 30.24,13.44 52.99,30.66 68.44,51.69 15.42,20.99 23.11,44.69 23.11,71.08 0,33.97 -11.85,64.63 -35.56,91.86 -23.67,27.27 -54.86,48.86 -93.52,64.74 -38.7,15.87 -76.45,25.61 -113.35,29.17 -36.9,3.6 -88.44,5.37 -154.62,5.37l-234.74 0zm215.97 -77.79l0 0 42.93 0c45.62,0 79.24,-3.49 100.93,-10.41 21.66,-6.91 40.36,-19.79 56.03,-38.56 15.62,-18.77 23.45,-41.59 23.45,-68.4 0,-51.01 -35.98,-76.48 -107.98,-76.48l-55.67 0 -59.69 193.85z"/>
+                <path fill='#D42942' fill-rule='nonzero' d="M3320.85 346.75c-68.37,0 -127.64,-12.73 -177.73,-38.2 -50.09,-25.51 -75.14,-62.16 -75.14,-110 0,-55 28.08,-101.81 84.17,-140.55 56.13,-38.63 129.58,-57.99 220.35,-57.99 72.42,0 131.86,13.54 178.4,40.6 46.49,27.06 69.74,62.27 69.74,105.59 0,55.91 -27.59,103.33 -82.83,142.2 -55.21,38.91 -127.53,58.35 -216.96,58.35zm1.34 -76.45l0 0c29.99,0 52.74,-7.26 68.44,-21.8 15.59,-14.5 27.94,-35.77 36.86,-63.71 8.93,-27.94 13.41,-46.81 13.41,-56.69 0,-16.51 -6.81,-29.14 -20.46,-37.85 -13.62,-8.75 -31.86,-13.09 -54.65,-13.09 -42.93,0 -73.23,17.11 -90.87,51.29 -17.68,34.19 -26.5,64.53 -26.5,90.91 0,33.94 24.59,50.94 73.77,50.94z"/>
+            </g>
+        </Svg>)
+    } else if (devInfo['productId'] === "bnqtq87x3yuxg6nf") {
+        return (<View>FOGATTI</View>)
+    } else if (devInfo['productId'] === "uaaxd0vrmf3ez9zm") {
+        return (<View>ORBK</View>)
+    } else if (devInfo['productId'] === "hlma4dxmjjsiicjg") {
+        return (<View>Westinghouse</View>)
+    } else if (devInfo['productId'] === "avkomece5wvqrhlh") {
+        return (<View/>)
+    } else if (devInfo['productId'] === "iepip6u1zyet9up1") {
+        return (<View/>)
+    } else {
+        return (<View/>)
+    }
 }

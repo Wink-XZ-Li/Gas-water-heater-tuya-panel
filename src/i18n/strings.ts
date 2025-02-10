@@ -10,6 +10,8 @@ export default {
     powerState: 'Power ON/OFF',
     tempRegulation: 'Temperature Regulation',
     usageReport: 'Consumption Report',
+    outletTempC: 'Outlet Temp',
+    outletTempF: 'Outlet Temp',
     noFault: 'normal',
     E0Title: 'E0',
     E1Title: 'E1',

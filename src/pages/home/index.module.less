@@ -13,145 +13,166 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   width: 100%;
-  height: 100%;
+  height: 84%;
 }
 
-.baseSection {
+.tempButton:active {
   position: relative;
   display: flex;
-  // flex-direction: row;
-  // width: 90%;
-  background-color: #ffffff !important;
-  border-radius: 16px !important;
-  // align-items: center;
-  // justify-content: center;
-  box-shadow: 4px 4px 4px 4px rgba(168, 164, 164, 0.2);
-  margin-left: 18px;
-  margin-right: 18px;
-  margin-bottom: 18px;
-}
-
-.stateAndControlSection {
-  // margin-top: 13px;
-  height: auto;
-  align-items: center;
-  justify-content: center;
   flex-direction: column;
-  position: relative;
-  display: flex;
-  background-color: #ffffff;
+  align-items: center;
 }
 
-.singleSection {
-  height: 80px;
+
+// .tempButton {
+//   position: relative;
+//   display: flex;
+//   height: 80%;
+//   aspect-ratio: 1;
+//   color: rgb(91,91,91);
+// }
+
+.roSection {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  width: 96%;
+  height: 4%;
+  margin-left: 2%;
+  margin-right: 2%;
+  // background-color: #ffffff;
+  border-radius: 16px;
+  margin-bottom: 5px;
   align-items: center;
   justify-content: center;
-  flex-direction: row;
+  // box-shadow: 2px 0px 2px 2px rgba(168, 164, 164, 0.2);
 }
 
-.sectionTitle {
+.rwSection {
   position: relative;
   display: flex;
   flex-direction: row;
-  width: 100%;
-  font-size: medium;
-  font-weight: normal;
-  margin-top: 5%;
-  margin-left: 8%;
-}
-
-.sectionBtn {
-  position: relative;
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
+  width: 96%;
+  height: 10%;
+  margin-left: 2%;
+  margin-right: 2%;
+  background-color: #ffffff;
+  border-radius: 16px;
+  margin-top: 20px;
   align-items: center;
-  width: 100%;
+  justify-content: center;
+  box-shadow: 2px 0px 2px 2px rgba(168, 164, 164, 0.2);
 }
 
-.sectionTitleLogo {
-  margin-right: 4px;
+.powerIconOn {
+  box-shadow: 0px 0px 14px 4px rgba(41, 91, 221, 0.2);
 }
 
-.sectionTitleText {
-  font-weight: bold;
-  color: black;
+.powerIconOn:active {
+  box-shadow: 0px 0px 14px 8px rgba(41, 91, 221, 0.2);
+}
+
+.powerIconOff:active {
+  box-shadow: 0px 0px 14px 8px rgba(102, 102, 102, 0.2);
+}
+
+.powerIconOff {
+  box-shadow: 0px 0px 14px 4px rgba(102, 102, 102, 0.2);
 }
 
 .sectionItem {
   position: relative;
   display: flex;
-  flex-direction: row;
-  width: 90%;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.sectionItemText {
-  position: relative;
-  display: flex;
-  width: auto;
-  justify-content: space-between;
-  font-weight: normal;
-  margin-top: 8px;
-  margin-bottom: 8px;
-}
-
-.setTempButton {
-  position: relative;
-  display: flex;
   flex: 1;
+  padding-top: 1%;
+  padding-bottom: 1%;
   height: 100%;
   justify-content: center;
   align-items: center;
   flex-direction: column;
 }
 
-.sectionItem_Slider {
+.button {
   position: relative;
   display: flex;
-  flex: 4;
+  flex: 1;
+  // padding-top: 1%;
+  // padding-bottom: 1%;
   height: 100%;
+  width: 100%;
   justify-content: center;
+  align-items: center;
   flex-direction: column;
 }
 
-.titleSection_content {
+.reportIcon {
   position: relative;
   display: flex;
-  flex-direction: row;
-  flex: 1;
-  width: 90%;
+  padding-right: 15px;
 }
 
-.tempNumRow {
-  position: relative;
-  display: flex;
-  flex-direction: row;
-  align-items: flex-end;
-  width: 90%;
-  justify-content: center;
-}
-
-.tempNum {
-  position: relative;
-  display: flex;
+.sectionItemTitle {
+  color: #a7a7a7;
+  font-size: normal;
   text-align: center;
-  font-size: 52px;
-  color: #000000;
 }
 
+.sectionItemContentRO {
+  color: #a7a7a7;
+  font-size: 20px;
+  text-align: center;
+}
 
-.tempUnit {
+.sectionItemContentROUnit {
+  margin-left: 3px;
+  color: #a7a7a7;
+  font-size: normal;
+  text-align: center;
+}
+
+.sectionItemContent {
+  font-size: 28px;
+  text-align: center;
+  font-weight: normal;
+}
+// .sectionItemContent:active {
+//   font-weight: bold;
+// }
+
+.tempUnitSplit {
+  display: flex;
+  position: absolute;
+
+}
+
+.sectionItemUsageReport {
+  color: #666666;
+  font-size: 28px;
+  text-align: center;
+}
+
+.sectionItemUsageReport:active {
+  font-weight: bold;
+}
+
+.sectionItemStyle {
+  display: flex;
+  position: relative;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+}
+
+.sectionItemStyle:active .sectionItemContent {
+  font-weight: bold;
+}
+
+.sectionItemForUsageReport {
   position: relative;
   display: flex;
-  font-size: 18px;
-  font-weight: bold;
-  color: #000000;
-  vertical-align: bottom;
-  margin-bottom: 10px;
-  margin-left: 10px;
-  margin-right: 10px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
 }
+
