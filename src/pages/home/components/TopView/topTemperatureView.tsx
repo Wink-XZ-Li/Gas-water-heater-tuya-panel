@@ -20,45 +20,55 @@ export default function TopTemperatureView(prob: ChildComponentProps) {
     const devInfo = useDevInfo();
     const dpState = useProps(state => state); // 获取所有dpState
     const actions = useActions();
-
+    
     const switch_power = dpState["switch"]
     const unit = dpState["temp_unit_convert"]
     const temp_c = dpState['temp_set']
     const temp_f = dpState['temp_set_f']
     const outletTemp_c = dpState['temp_effluent']
     const outletTemp_f = dpState['temp_effluent_f']
-    const outletTemp = unit==='c'?outletTemp_c:outletTemp_f
+    const outletTemp = dpState["temp_unit_convert"]==='c'?outletTemp_c:outletTemp_f
 
-    const setTemp = unit==='c'?temp_c:temp_f
+    const setTemp = dpState["temp_unit_convert"]==='c'?temp_c:temp_f
 
-    const [tempForBug,setTempForBug] = useState(setTemp)
+    // const [tempForBug,setTempForBug] = useState(setTemp)
 
     const fault = dpState['fault']
+    const waterFlowStatus = dpState['water_flow_status']
+    const fanStatus = dpState['fan_status']
+    const flameStatus = dpState['flame_status']
 
     const tempColor = (!switch_power || fault !== 0) ? '#282828':'#000000'
     
-    const setTempMin = unit==='c' ? 35 : 95;
-    const setTempMax = unit==='c' ? 65 : 149;
+    const setTempMin = dpState["temp_unit_convert"]==='c' ? 35 : 95;
+    const setTempMax = dpState["temp_unit_convert"]==='c' ? 65 : 149;
 
     const disable = !switch_power || (fault !== 0)
+
+    const activeIconColor = '#295bdd'//'rgb(135,88,128)'
+    const lazyIconColor = '#a5a5a5'
+    const iconWidth = '36'
+    const iconflameColor = flameStatus ? activeIconColor:lazyIconColor
+    const iconFlowColor = waterFlowStatus ? activeIconColor:lazyIconColor
+    const iconFanColor = fanStatus ? activeIconColor:lazyIconColor
     
     useEffect(() => {
         prob.setLocalTempPrt(tempToProgress(setTemp))
-        setTempForBug(setTemp)
-        console.log('setTempForBug: ', tempForBug);
+        // setTempForBug(setTemp)
+        // console.log('setTempForBug: ', tempForBug);
     }, [setTemp]);
 
     const tempUnit = () : string => {
-        if (unit === "c") {
+        if (dpState["temp_unit_convert"] === "c") {
             return "℃"
-        } else if (unit === 'f') {
+        } else if (dpState["temp_unit_convert"] === 'f') {
             return "℉"
         } else {
             return "_ _"
         }
     }
 
-    const subTitle:string = unit==='c'?Strings.getLang('hightTempWarm_c'):Strings.getLang('hightTempWarm_f')
+    const subTitle:string = 'The setting temperature has exceeded 49℃/120℉. Please confirm.'//dpState["temp_unit_convert"]==='c'?Strings.getLang('hightTempWarm_c'):Strings.getLang('hightTempWarm_f')
     
     // 处理温度环移动事件
     const handleMove = (v: number) => {
@@ -79,7 +89,7 @@ export default function TopTemperatureView(prob: ChildComponentProps) {
 
     // 进度条值 -> 温度值
     function progressToTemp(progress: number): number {
-        if (unit==='c') {
+        if (dpState["temp_unit_convert"]==='c') {
             return Math.floor(
                 setTempMin +
                 (progress) * (setTempMax - setTempMin) / (100)
@@ -92,7 +102,7 @@ export default function TopTemperatureView(prob: ChildComponentProps) {
     
     // 温度值 -> 进度条值
     function tempToProgress(temp: number): number {
-        if (unit==='c') {
+        if (dpState["temp_unit_convert"]==='c') {
             return (
                 (temp - setTempMin) * (100) / (setTempMax - setTempMin)
             );
@@ -103,7 +113,7 @@ export default function TopTemperatureView(prob: ChildComponentProps) {
     }
 
     function directSetTemp(value: number) {
-        if (unit==='c') {
+        if (dpState["temp_unit_convert"]==='c') {
             if (value>=49) {
                 // showModal({title: '', content: subTitle, showCancel: true, cancelText: Strings.getLang('no'), confirmText: Strings.getLang('yes'), 
                 //     success: (params) => {
@@ -150,7 +160,7 @@ export default function TopTemperatureView(prob: ChildComponentProps) {
     }
 
     function alertSetTemp(temp: number) {
-        if (unit==='c') {
+        if (dpState["temp_unit_convert"]==='c') {
             actions['temp_set'].set(temp)
         } else {
             actions['temp_set_f'].set(temp)
@@ -261,6 +271,40 @@ export default function TopTemperatureView(prob: ChildComponentProps) {
                     <Text className={styles.tempNum} style={{color: tempColor}}>{(outletTemp || '_ _')}</Text>
                     <Text className={styles.tempUnit} style={{color: tempColor}}>{tempUnit()}</Text>
                 </View>
+                <View className={styles.icons}>
+                    {/* 水流 */}
+                    <Svg className={styles.icon} width={iconWidth} height={iconWidth}style={{marginLeft: '10', marginRight: '10'}} viewBox="0 0 6.64 7.32">
+                        <path fill={iconFlowColor} d="M5.4 5.2c0.14,-0.02 0.32,0.06 0.35,0.22l0.02 0.1 0.23 1.04c0.03,0.16 -0.03,0.33 -0.22,0.37 -0.21,0.04 -0.34,-0.1 -0.37,-0.22l-0.27 -1.21c-0.03,-0.12 0.07,-0.28 0.26,-0.3z"/>
+                        <path fill={iconFlowColor} d="M5.5 4.25c0.03,0.18 -0.08,0.3 -0.24,0.33 -0.16,0.03 -0.33,-0.05 -0.37,-0.24l-0.25 -1.44 0.63 0 0.23 1.34z"/>
+                        <path fill={iconFlowColor} d="M1.17 5.2c-0.14,-0.02 -0.32,0.06 -0.35,0.22l-0.02 0.1 -0.23 1.04c-0.03,0.16 0.03,0.33 0.22,0.37 0.22,0.04 0.34,-0.1 0.37,-0.22l0.27 -1.21c0.03,-0.12 -0.07,-0.28 -0.26,-0.3z"/>
+                        <path fill={iconFlowColor} d="M1.07 4.25c-0.03,0.18 0.08,0.3 0.25,0.33 0.16,0.03 0.33,-0.05 0.37,-0.24l0.25 -1.44 -0.63 0 -0.23 1.34z"/>
+                        <path fill={iconFlowColor} d="M3.79 1l0 -1 -1.01 0 0 1c-1.01,0.11 -2.02,0.28 -2.78,0.55l0 0.38 6.64 0 0 -0.38c-0.82,-0.27 -1.78,-0.44 -2.85,-0.55z"/>
+                        <path fill={iconFlowColor} d="M2.97 4.28c0,0.19 0.12,0.31 0.31,0.31 0.19,0 0.31,-0.12 0.31,-0.31l0 -1.37 -0.63 0 0 1.37z"/>
+                        <path fill={iconFlowColor} d="M3.29 5.21c-0.19,0 -0.31,0.12 -0.31,0.25l0 1.61c0,0.12 0.12,0.25 0.31,0.25 0.19,0 0.31,-0.12 0.31,-0.25l0 -1.61c0,-0.13 -0.13,-0.25 -0.31,-0.25z"/>
+                    </Svg>
+                    {/* 风机 */}
+                    <Svg className={styles.icon} width={iconWidth} height={iconWidth}style={{marginLeft: '10', marginRight: '10'}} viewBox="0 0 8.05 8.05">
+                        <path fill={iconFanColor} d="M7.3 2.27l-0.85 1.42c-0.19,0.31 -0.55,0.46 -0.9,0.4 -0.07,-0.01 -0.12,-0.05 -0.15,-0.11 -0.03,-0.06 -0.03,-0.13 0.01,-0.18l1.46 -2.44c0.04,-0.06 0.09,-0.09 0.16,-0.1 0.07,-0.01 0.13,0.02 0.18,0.07 0.23,0.26 0.28,0.64 0.1,0.95z"/>
+                        <path fill={iconFanColor} d="M7.24 5.89l-1.7 0c-0.37,0 -0.69,-0.23 -0.8,-0.56 -0.02,-0.06 -0.01,-0.13 0.03,-0.18 0.04,-0.05 0.1,-0.08 0.17,-0.08l2.92 -0c0.07,0 0.13,0.03 0.17,0.08 0.04,0.05 0.05,0.12 0.03,0.18 -0.11,0.32 -0.43,0.56 -0.8,0.56z"/>
+                        <path fill={iconFanColor} d="M3.96 7.64l-0.85 -1.42c-0.19,-0.31 -0.14,-0.69 0.09,-0.95 0.05,-0.05 0.11,-0.07 0.18,-0.07 0.07,0.01 0.13,0.04 0.16,0.1l1.46 2.44c0.03,0.06 0.04,0.12 0.01,0.18 -0.03,0.06 -0.08,0.1 -0.15,0.11 -0.35,0.07 -0.71,-0.08 -0.9,-0.4z"/>
+                        <path fill={iconFanColor} d="M0.75 5.78l0.85 -1.42c0.19,-0.31 0.55,-0.46 0.9,-0.39 0.07,0.01 0.12,0.05 0.15,0.11 0.03,0.06 0.03,0.13 -0.01,0.18l-1.46 2.44c-0.04,0.06 -0.09,0.09 -0.16,0.1 -0.07,0.01 -0.13,-0.02 -0.18,-0.07 -0.23,-0.26 -0.28,-0.64 -0.09,-0.95z"/>
+                        <path fill={iconFanColor} d="M0.82 2.17l1.7 0c0.37,0 0.69,0.23 0.81,0.56 0.02,0.06 0.01,0.13 -0.03,0.18 -0.04,0.05 -0.1,0.08 -0.17,0.08l-2.92 0c-0.07,0 -0.13,-0.03 -0.17,-0.08 -0.04,-0.06 -0.05,-0.12 -0.03,-0.18 0.12,-0.32 0.43,-0.56 0.8,-0.56z"/>
+                        <path fill={iconFanColor} d="M4.09 0.41l0.85 1.42c0.19,0.31 0.14,0.69 -0.09,0.95 -0.05,0.05 -0.11,0.08 -0.18,0.07 -0.07,-0.01 -0.12,-0.04 -0.16,-0.1l-1.46 -2.44c-0.04,-0.06 -0.04,-0.12 -0.01,-0.18 0.03,-0.06 0.08,-0.1 0.15,-0.11 0.35,-0.07 0.71,0.08 0.9,0.4z"/>
+                        <path fill={iconFanColor} d="M4.03 4.58c0.32,0 0.57,-0.25 0.57,-0.55 0,-0.31 -0.26,-0.55 -0.57,-0.55 -0.32,0 -0.57,0.25 -0.57,0.55 0,0.3 0.26,0.55 0.57,0.55z"/>    
+                    </Svg>
+                    {/* 火焰 */}
+                    <Svg className={styles.icon} width={iconWidth} height={iconWidth} style={{marginLeft: '10', marginRight: '10'}} viewBox="0 0 4.55 6.07">
+                        <path fill={iconflameColor} d="M1.79 1.63c-0.84,1.26 -1.37,1.97 -1.37,2.74 0,0.5 0.09,0.83 0.31,1.14 0.06,0.08 0.12,0.16 0.19,0.23 0.03,0.03 0.05,0.08 0.05,0.12l0 0.03c0,0.07 -0.04,0.13 -0.11,0.16 -0.07,0.03 -0.14,0.01 -0.19,-0.04 -0.09,-0.09 -0.17,-0.18 -0.25,-0.29 -0.26,-0.37 -0.43,-0.85 -0.43,-1.43 0,-0.83 0.46,-1.57 1.25,-2.76 0.32,-0.51 0.71,-1.04 1.02,-1.54 0.32,0.51 0.7,1.03 1.02,1.54 0.79,1.18 1.25,1.92 1.25,2.76 0,0.58 -0.16,1.06 -0.43,1.43 -0.07,0.11 -0.16,0.2 -0.25,0.29 -0.05,0.05 -0.13,0.06 -0.19,0.04 -0.07,-0.03 -0.11,-0.09 -0.11,-0.16l0 -0.03c0,-0.05 0.02,-0.09 0.05,-0.12 0.07,-0.07 0.13,-0.14 0.19,-0.23 0.22,-0.31 0.31,-0.63 0.31,-1.14 0,-0.77 -0.53,-1.49 -1.37,-2.74 -0.14,-0.19 -0.27,-0.38 -0.41,-0.58l-0.07 -0.1 -0.07 0.1c-0.14,0.19 -0.27,0.39 -0.41,0.58z"/>
+                        <path fill={iconflameColor} d="M2.97 5.25l0 0c-0.05,0.11 -0.13,0.21 -0.23,0.27 -0.12,0.09 -0.24,0.15 -0.47,0.15 -0.23,0 -0.34,-0.06 -0.47,-0.15 -0.09,-0.07 -0.17,-0.16 -0.23,-0.27 -0.05,-0.11 -0.08,-0.25 -0.08,-0.4 0,-0.33 0.27,-0.74 0.66,-1.31l0.12 -0.18 0.12 0.18c0.39,0.58 0.66,0.98 0.66,1.31 0,0.16 -0.03,0.29 -0.08,0.4zm-0.26 -1.92c-0.09,-0.14 -0.19,-0.28 -0.28,-0.41 -0.04,-0.05 -0.1,-0.08 -0.16,-0.08 -0.06,0 -0.12,0.03 -0.16,0.08 -0.09,0.13 -0.18,0.28 -0.28,0.41 -0.42,0.63 -0.72,1.08 -0.72,1.52 0,0.19 0.03,0.36 0.1,0.51 0.23,0.56 0.75,0.72 1.05,0.72 0.3,0 0.82,-0.16 1.06,-0.72 0.06,-0.15 0.09,-0.32 0.09,-0.51 0,-0.44 -0.3,-0.89 -0.72,-1.52z"/>    
+                    </Svg>
+                    <Svg className={styles.icon} width={'46'} height={'46'} viewBox="0 0 20 20">
+                        <path fill={activeIconColor} d="m9.09,15.68l.9,1.48.89-1.46c-.55-.34-1.24-.35-1.8-.01Z"/>
+                        <path fill={activeIconColor} d="m13.19,11.94c-1.98-1.11-4.4-1.11-6.38,0l.9,1.48c1.42-.78,3.15-.78,4.57,0l.9-1.48Z"/>
+                        <path fill={activeIconColor} d="m15.46,8.22c-3.37-1.96-7.56-1.96-10.93,0l.9,1.48c2.81-1.63,6.29-1.6,9.1.02l.92-1.51Z"/>
+                        <path fill={activeIconColor} d="m16.59,6.36l.91-1.48c-4.61-2.72-10.39-2.72-15,.01l.9,1.48c4.06-2.39,9.13-2.4,13.19-.01Z"/>
+                    </Svg>
+                </View>
+
             </View>
         </View>
     )
@@ -288,7 +332,7 @@ function BrandView() {
     } else if (devInfo['productId'] === "uaaxd0vrmf3ez9zm") {
         return (<View>ORBK</View>)
     } else if (devInfo['productId'] === "hlma4dxmjjsiicjg") {
-        return (<View>Westinghouse</View>)
+        return (<View style={{height: '100',width: '200'}} className={styles.brand}></View>)
     } else if (devInfo['productId'] === "avkomece5wvqrhlh") {
         return (<View/>)
     } else if (devInfo['productId'] === "iepip6u1zyet9up1") {

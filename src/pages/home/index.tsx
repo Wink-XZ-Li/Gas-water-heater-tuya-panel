@@ -80,6 +80,7 @@ export function Home() {
         )
     } else {
         const index = Math.round(progress / 100 * (fahrenheitTemps.length - 1));
+        console.log('log: fahrenheitTemps', fahrenheitTemps[index])
         return fahrenheitTemps[index];
     }
 }
@@ -166,6 +167,7 @@ function tempToProgress(temp: number): number {
     } else {
       const index = fahrenheitTemps.indexOf(temp_f);
       if (index>=1) {
+        console.log('reduceTemp', fahrenheitTemps[index-1])
         actions['temp_set_f'].set(fahrenheitTemps[index-1])
       }
     }
@@ -182,7 +184,7 @@ function tempToProgress(temp: number): number {
 
   // 升温
   function increaseTemp2(temp: number) {
-    const subTitle:string = unit==='c'?Strings.getLang('hightTempWarm_c'):Strings.getLang('hightTempWarm_f')
+    const subTitle:string = 'The setting temperature has exceeded 49℃/120℉. Please confirm.'//unit==='c'?Strings.getLang('hightTempWarm_c'):Strings.getLang('hightTempWarm_f')
     if (unit==='c') {
       if (temp===49) {
         setIsPressingAdd(false)
@@ -210,7 +212,7 @@ function tempToProgress(temp: number): number {
 
   // 升温
   function increaseTemp() {
-    const subTitle:string = unit==='c'?Strings.getLang('hightTempWarm_c'):Strings.getLang('hightTempWarm_f')
+    const subTitle:string =  'The setting temperature has exceeded 49℃/120℉. Please confirm.'// = unit==='c'?Strings.getLang('hightTempWarm_c'):Strings.getLang('hightTempWarm_f')
     if (unit==='c') {
       if (temp_c===49) {
         showModal({title: '', content: subTitle, showCancel: true, cancelText: Strings.getLang('no'), confirmText: Strings.getLang('yes'), 
@@ -233,6 +235,7 @@ function tempToProgress(temp: number): number {
         })
       } else {
         if (index<fahrenheitTemps.length) {
+          console.log('increaseTemp', fahrenheitTemps[index+1])
           actions['temp_set_f'].set(fahrenheitTemps[index+1])
         }
       }
@@ -299,7 +302,7 @@ function tempToProgress(temp: number): number {
 
           <View className={styles.sectionItem} >
             <View>
-              <Text className={styles.sectionItemContentRO}>{Math.floor(progressToTemp(localTempPrt))}</Text>
+              <Text className={styles.sectionItemContentRO}>{progressToTemp(localTempPrt)}</Text>
               <Text className={styles.sectionItemContentROUnit}>{unitText}</Text>
             </View>
             <Text className={styles.sectionItemTitle}>Set Temp</Text>

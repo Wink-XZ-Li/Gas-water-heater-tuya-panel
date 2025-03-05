@@ -13,7 +13,7 @@ import {
 } from '@ray-js/ray';
 import { Icon } from '@ray-js/icons';
 import StatCharts from '@ray-js/stat-charts';
-import { useDevice, useProps } from '@ray-js/panel-sdk';
+import { useDevice, useProps, useDevInfo } from '@ray-js/panel-sdk';
 import Strings from '@/i18n';
 import Tabs from '@ray-js/components-ty-tabs';
 import { images } from '@/res';
@@ -21,7 +21,6 @@ import styles from './index.module.less';
 import Svg from '@ray-js/svg';
 import { useDebounceEffect } from 'ahooks';
 import Popover from '@ray-js/components-ty-popover';
-import app from '@/app';
 
 interface DPInfo {
   type: 'water' | 'gas' | 'count' | 'time';
@@ -39,10 +38,36 @@ interface DPInfo {
 }
 
 const mizudoRed = '#d3233b' 
+const westinghouseBlue = '#295bdd'
 // 燃气热值比例
 const calorificRatio = 37.37/93.1
 // 所有统计项信息
-const usage_dps: {[key: string]: DPInfo} = {
+// 若pp菜单中od参数为0（产线未进行设置参数）
+const usage_dps_error:  {[key: string]: DPInfo} = {
+  dp_water: {
+    type: 'water', name: 'Water Usage', key: 'water_total', unit: 'Gal', id: 25, unitText: 'Gallon', 
+    icon: 'icon-a-dropfill',
+    infoFront: 'You’ve used ',
+    infoBack: 'G',
+    notes: "Under normal operation, there's a ±15% tolerance in water consumption monitoring.",
+    toFixed: 1
+  },
+  dp_count: {
+    type: 'count', name: 'Usage Count', key: 'usage_count', unit: 'Count', id: 101, unitText: 'Count',
+    icon: 'icon-repeat',
+    infoFront: 'You’ve activated',
+    infoBack: 'times',
+    toFixed: 0
+  },
+  dp_time: {
+    type: 'time', name: 'Usage Time', key: 'usage_time', unit: 'Minute', id: 102, unitText: 'Minute',
+    icon: 'icon-a-stopwatchfill',
+    infoFront: 'You’ve used ',
+    infoBack: 'minutes',
+    toFixed: 0
+  },
+};
+const usage_dps_nomal: {[key: string]: DPInfo} = {
   dp_water: {
     type: 'water', name: 'Water Usage', key: 'water_total', unit: 'Gal', id: 25, unitText: 'Gallon', 
     icon: 'icon-a-dropfill',
@@ -56,7 +81,7 @@ const usage_dps: {[key: string]: DPInfo} = {
     icon: 'icon-a-flamefill',
     infoFront: 'You’ve used',
     infoBack: 'Therms',
-    toFixed: 2
+    toFixed: 3
   },
   dp_count: {
     type: 'count', name: 'Usage Count', key: 'usage_count', unit: 'Count', id: 101, unitText: 'Count',
@@ -88,8 +113,6 @@ export function Stats() {
   const [date, setDate] = useState(dayjs());
   const [visibleItem, setVisibleItem] = useState(false);
   
-  const [type, setType] = useState(usage_dps.dp_water);
-
   // 总用水量，总用电量，总使用次数，总使用时间
   // const [total, setTotal] = useState<string>('_ _');
   const [totalUsage, setTotalUsage] = useState<object>({
@@ -98,9 +121,18 @@ export function Stats() {
     'count': '_ _',
     'time': '_ _',
   });
-  const totalSchema = useDevice(devInfo => devInfo.dpSchema[type.key]);
+
   const devId = useDevice(d => d.devInfo.devId);
   const dpState = useProps(state => state); // 获取所有dpState
+  const devInfo = useDevInfo();
+  const odIndex = dpState["device_model"]
+  /// 根据设备型号（pp菜单）确认气源
+  const isNG = (odIndex%2===1)?true:false
+  // console.log('isNG天然气？:',isNG)
+
+  const usage_dps = odIndex===0?usage_dps_error:usage_dps_nomal
+  const [type, setType] = useState(usage_dps.dp_water);
+  const totalSchema = useDevice(devInfo => devInfo.dpSchema[type.key]);
   const consumption = dpState[type.key]
 
   // 防止date 大于今天日期
@@ -121,6 +153,31 @@ export function Stats() {
   const endDate= token === 'week' ? date : date.endOf(token);
   const startDateFormated = startDate.format(formatToken);
   const endDateFormated = endDate.format(formatToken);
+
+  // 表格主体色调
+  var tableColor = ''
+  if (devInfo['productId'] === "zb7g4ffimeyqwvxt") {
+    // mizudo
+    tableColor = mizudoRed
+  } 
+  // else if (devInfo['productId'] === "bnqtq87x3yuxg6nf") {
+  //   // fogatti
+  // } else if (devInfo['productId'] === "uaaxd0vrmf3ez9zm") {
+  //   //ORBK
+  // } 
+  else if (devInfo['productId'] === "hlma4dxmjjsiicjg") {
+    // westinghouse 
+    tableColor = westinghouseBlue
+  } 
+  // else if (devInfo['productId'] === "avkomece5wvqrhlh") {
+  //     return (<View/>)
+  // } 
+  // else if (devInfo['productId'] === "iepip6u1zyet9up1") {
+  //     return (<View/>)
+  // } 
+  else {
+    tableColor = mizudoRed
+  }
 
   const show2sLoading = () => {
     showLoading({title: "", mask: true})
@@ -319,16 +376,16 @@ export function Stats() {
   function multiplyValues(input: DataObject[]): DataObject[] {
     var multiplier = 1
     if (type.type==='gas') {
-      if (dpState['gas_type'] === 'LPG') {
-        multiplier = 37.78/105.5/calorificRatio
-      } else if (dpState['gas_type'] === 'NG') {
-        multiplier = 37.78/105.5
+      if (!isNG) {
+        multiplier = 37.78/105.5060/calorificRatio
+      } else {
+        multiplier = 37.78/105.5060
       }
       return input.map(obj => ({
         ...obj,
         data: obj.data.map(dataPoint => ({
             ...dataPoint,
-            value: parseFloat((dataPoint.value * multiplier).toFixed(2)),
+            value: parseFloat((dataPoint.value * multiplier).toFixed(3)),
         })),
       }));
     } else {
@@ -339,10 +396,13 @@ export function Stats() {
 
   // 将燃气体积转换为热值
   function volumeToTherm(volume: number): number {
-    if (dpState['gas_type'] === 'LPG') {
-      return  parseFloat((volume*37.78/105.5/calorificRatio).toFixed(2))
-    } else if (dpState['gas_type'] === 'NG'){
-      return  parseFloat((volume*37.78/105.5).toFixed(2))
+    // LPG
+    if (!isNG) {
+      return  parseFloat((volume*37.78/105.5060/calorificRatio).toFixed(3))
+    } 
+    // NG
+    else if (isNG){
+      return  parseFloat((volume*37.78/105.5060).toFixed(3))
     }
   }
 
@@ -411,7 +471,7 @@ export function Stats() {
         setTotalUsage(obj)
       })
     }
-  },[date,token,consumption], { wait: 500 })//1000
+  },[date,token,consumption,type], { wait: 100 })//1000
 
   return (
     <View className={styles.view}>
@@ -423,7 +483,7 @@ export function Stats() {
           <StatCharts
             style={{ width: '686rpx', padding: '0' }}
             devIdList={[devId]}
-            dpList={[{ id: totalSchema.id, name: Strings.getLang('waterConsumption') }]}
+            dpList={[{ id: totalSchema.id, name: type.name }]}
             unit={type.unit}
             range={range}
             // @ts-ignore
@@ -449,7 +509,7 @@ export function Stats() {
                   
                   <Text style={{paddingLeft: '4px'}}>
                     <Text style={{fontSize: '20px', paddingLeft: 8}}>{type.infoFront}</Text>
-                    <Text style={{color: mizudoRed, fontSize: '25px', paddingLeft:10, paddingRight:10, fontWeight: 'bold'}}>{totalUsage[type.type]}</Text>
+                    <Text style={{color: tableColor, fontSize: '25px', paddingLeft:10, paddingRight:10, fontWeight: 'bold'}}>{totalUsage[type.type]}</Text>
                     <Text style={{fontSize: '20px'}}>{type.infoBack}</Text>
                   </Text>
                 </View>
@@ -462,7 +522,7 @@ export function Stats() {
                 </View>
               )
             }}
-            colors={[mizudoRed]}
+            colors={[tableColor]}
             debug={false}
           />
         </View>
