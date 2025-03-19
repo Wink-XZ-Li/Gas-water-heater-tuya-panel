@@ -123,9 +123,9 @@ export function Stats() {
   });
 
   const devId = useDevice(d => d.devInfo.devId);
-  const dpState = useProps(state => state); // 获取所有dpState
+  // const dpState = useProps(state => state); // 获取所有dpState
   const devInfo = useDevInfo();
-  const odIndex = dpState["device_model"]
+  const odIndex = useProps(state => state)["device_model"]
   /// 根据设备型号（pp菜单）确认气源
   const isNG = (odIndex%2===1)?true:false
   // console.log('isNG天然气？:',isNG)
@@ -133,7 +133,7 @@ export function Stats() {
   const usage_dps = odIndex===0?usage_dps_error:usage_dps_nomal
   const [type, setType] = useState(usage_dps.dp_water);
   const totalSchema = useDevice(devInfo => devInfo.dpSchema[type.key]);
-  const consumption = dpState[type.key]
+  const consumption = useProps(state => state)[type.key]
 
   // 防止date 大于今天日期
   if (date>dayjs()) setDate(dayjs());

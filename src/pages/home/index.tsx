@@ -20,35 +20,35 @@ export const fahrenheitTemps = [95,96,98,100,102,104,105,107,109,111,113,114,116
 export function Home() {
   const dpSchema = useDpSchema();
   const devInfo = useDevInfo();
-  const dpState = useProps(state => state);
+  // const dpState = useProps(state => state);
   const actions = useActions();
 
   // 产品属性
-  const switch_power = dpState["switch"]
-  const unit = dpState["temp_unit_convert"]
+  const switch_power = useProps(state => state)["switch"]
+  const unit = useProps(state => state)["temp_unit_convert"]
   const unitText = unit==='c'?'℃':'℉'
 
-  const waterFlow = dpState['water_flow']
+  const waterFlow = useProps(state => state)['water_flow']
 
   // const outletTemp_c = dpState['temp_effluent']
   // const outletTemp_f = dpState['temp_effluent_f']
   // const outletTemp = unit==='c'?outletTemp_c:outletTemp_f
 
-  const inletTemp_c = dpState['inlet_temp']
-  const inletTemp_f = dpState['inlet_temp_f']
+  const inletTemp_c = useProps(state => state)['inlet_temp']
+  const inletTemp_f = useProps(state => state)['inlet_temp_f']
   const inletTemp = unit==='c'?inletTemp_c:inletTemp_f
 
-  const temp_c = dpState['temp_set']
-  const temp_f = dpState['temp_set_f']
+  const temp_c = useProps(state => state)['temp_set']
+  const temp_f = useProps(state => state)['temp_set_f']
   const setTemp = unit==='c'?temp_c:temp_f
   // const [localTemp, setLocalTemp] = useState(setTemp); // 本地状态管理滑块值
 
   const [localTempPrt, setLocalTempPrt] = useState(0);
 
-  const work_state: number = dpState['work_state']
-  const eco: boolean = dpState['eco']
+  const work_state: number = useProps(state => state)['work_state']
+  const eco: boolean = useProps(state => state)['eco']
 
-  const fault: number = dpState['fault']
+  const fault: number = useProps(state => state)['fault']
   const [errorInfo, setErrorInfo] = useState<string>('Normal')
 
   const [reduceOnTouch, setReduceOnTouch] = useState<boolean>(false)
@@ -57,7 +57,7 @@ export function Home() {
   const [isPressingAdd, setIsPressingAdd] = useState(false);
   const [isPressingReduce, setIsPressingReduce] = useState(false);
 
-  const [isShowLocalTemp, setIsShowLocalTemp] = useState(false);
+  // const [isShowLocalTemp, setIsShowLocalTemp] = useState(false);
 
   const modeIconBGColor_on = (switch_power && fault === 0)?"linear-gradient(to right, rgb(53,166,241), rgb(247,18,10))":'rgb(201,201,201)'
 
@@ -153,11 +153,11 @@ function tempToProgress(temp: number): number {
 
   // 跳转到历史界面
   function navigateToHistory() {
-    const pages: Array<object> = getCurrentPages()
-    if (pages[pages.length-1].pageId === 'page_0') {
+    // const pages: Array<object> = getCurrentPages()
+    // if (pages[pages.length-1].pageId === 'page_0') {
       navigateTo({url: '/pages/history/index'})
-    }
-    console.log(pages)
+    // }
+    // console.log(pages)
   }
 
   // 降温
@@ -276,7 +276,7 @@ function tempToProgress(temp: number): number {
     } else {
       setErrorInfo('Normal');
     }
-  }, [dpState['fault']]);
+  }, [useProps(state => state)['fault']]);
 
   // 升降温按钮禁用
   const disableReduce = (unit==='c'?Boolean(temp_c<=35):Boolean(temp_f<=95)) || !switch_power || (fault !== 0)

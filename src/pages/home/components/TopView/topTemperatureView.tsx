@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Text, View, Button, Picker, showModal, vibrateShort } from '@ray-js/ray';
 import {Svg, Icon} from '@ray-js/svg';
 import { useActions, useDevInfo, useDpSchema, useProps } from "@ray-js/panel-sdk";
@@ -18,30 +18,35 @@ export default function TopTemperatureView(prob: ChildComponentProps) {
     const dpSchema = useDpSchema();
     // 使用useDevInfo获取devInfo
     const devInfo = useDevInfo();
-    const dpState = useProps(state => state); // 获取所有dpState
+    // const dpState = useProps(state => state); // 获取所有dpState
     const actions = useActions();
     
-    const switch_power = dpState["switch"]
-    const unit = dpState["temp_unit_convert"]
-    const temp_c = dpState['temp_set']
-    const temp_f = dpState['temp_set_f']
-    const outletTemp_c = dpState['temp_effluent']
-    const outletTemp_f = dpState['temp_effluent_f']
-    const outletTemp = dpState["temp_unit_convert"]==='c'?outletTemp_c:outletTemp_f
+    const switch_power = useProps(state => state)["switch"]
+    const unit = useProps(state => state)["temp_unit_convert"]
+    
+    const unitRef = useRef(unit);
 
-    const setTemp = dpState["temp_unit_convert"]==='c'?temp_c:temp_f
+    const temp_c = useProps(state => state)['temp_set']
+    const temp_f = useProps(state => state)['temp_set_f']
+    const outletTemp_c = useProps(state => state)['temp_effluent']
+    const outletTemp_f = useProps(state => state)['temp_effluent_f']
+    const outletTemp = useProps(state => state)["temp_unit_convert"]==='c'?outletTemp_c:outletTemp_f
+    
+    const temp_cRef = useRef(temp_c);
+    const temp_fRef = useRef(temp_f);
+    
+    // const setTemp_Ref = unitRef.current==='c'?temp_cRef:temp_fRef
+    const setTemp = useProps(state => state)["temp_unit_convert"]==='c'?temp_c:temp_f
 
-    // const [tempForBug,setTempForBug] = useState(setTemp)
-
-    const fault = dpState['fault']
-    const waterFlowStatus = dpState['water_flow_status']
-    const fanStatus = dpState['fan_status']
-    const flameStatus = dpState['flame_status']
+    const fault = useProps(state => state)['fault']
+    const waterFlowStatus = useProps(state => state)['water_flow_status']
+    const fanStatus = useProps(state => state)['fan_status']
+    const flameStatus = useProps(state => state)['flame_status']
 
     const tempColor = (!switch_power || fault !== 0) ? '#282828':'#000000'
     
-    const setTempMin = dpState["temp_unit_convert"]==='c' ? 35 : 95;
-    const setTempMax = dpState["temp_unit_convert"]==='c' ? 65 : 149;
+    const setTempMin = unitRef.current==='c' ? 35 : 95;
+    const setTempMax = unitRef.current==='c' ? 65 : 149;
 
     const disable = !switch_power || (fault !== 0)
 
@@ -54,21 +59,24 @@ export default function TopTemperatureView(prob: ChildComponentProps) {
     
     useEffect(() => {
         prob.setLocalTempPrt(tempToProgress(setTemp))
-        // setTempForBug(setTemp)
-        // console.log('setTempForBug: ', tempForBug);
-    }, [setTemp]);
+        temp_cRef.current = temp_c;
+        temp_fRef.current = temp_f;
+    }, [temp_c, temp_f, unit]);
+
+    useEffect(() => {
+        unitRef.current = unit;
+    }, [unit]);
 
     const tempUnit = () : string => {
-        if (dpState["temp_unit_convert"] === "c") {
+        if (unit === "c") {
             return "℃"
-        } else if (dpState["temp_unit_convert"] === 'f') {
+        } else if (unit === 'f') {
             return "℉"
         } else {
             return "_ _"
         }
     }
 
-    const subTitle:string = 'The setting temperature has exceeded 49℃/120℉. Please confirm.'//dpState["temp_unit_convert"]==='c'?Strings.getLang('hightTempWarm_c'):Strings.getLang('hightTempWarm_f')
     
     // 处理温度环移动事件
     const handleMove = (v: number) => {
@@ -89,7 +97,7 @@ export default function TopTemperatureView(prob: ChildComponentProps) {
 
     // 进度条值 -> 温度值
     function progressToTemp(progress: number): number {
-        if (dpState["temp_unit_convert"]==='c') {
+        if (unitRef.current==='c') {
             return Math.floor(
                 setTempMin +
                 (progress) * (setTempMax - setTempMin) / (100)
@@ -102,10 +110,10 @@ export default function TopTemperatureView(prob: ChildComponentProps) {
     
     // 温度值 -> 进度条值
     function tempToProgress(temp: number): number {
-        if (dpState["temp_unit_convert"]==='c') {
+        if (unit==='c') {
             return (
                 (temp - setTempMin) * (100) / (setTempMax - setTempMin)
-            );
+            )
         } else {
             const index = fahrenheitTemps.indexOf(temp);
             return index !== -1 ? (index / (fahrenheitTemps.length - 1)) * 100 : 0;
@@ -113,22 +121,17 @@ export default function TopTemperatureView(prob: ChildComponentProps) {
     }
 
     function directSetTemp(value: number) {
-        if (dpState["temp_unit_convert"]==='c') {
+        console.log('unitRef.current: ',unitRef.current)
+        if (unitRef.current==='c') {
             if (value>=49) {
-                // showModal({title: '', content: subTitle, showCancel: true, cancelText: Strings.getLang('no'), confirmText: Strings.getLang('yes'), 
-                //     success: (params) => {
-                //         if (params.confirm) {
-                //             alertSetTemp(value)
-                //         } else if (params.cancel) {
-                //             console.log('tempForBug: ', tempForBug);
-                //             prob.setLocalTempPrt(Math.floor(tempToProgress(tempForBug)))
-                //         }
-                //     }
-                // })
-                showModal({title: '', content: subTitle, showCancel: false, confirmText: Strings.getLang('yes'), 
+
+                showModal({title: '', content: Strings.getLang('hightTempWarm_c'), showCancel: true, cancelText: Strings.getLang('no'), confirmText: Strings.getLang('yes'), 
                     success: (params) => {
                         if (params.confirm) {
                             alertSetTemp(value)
+                        } else if (params.cancel) {
+                            const oldTemp = temp_cRef.current
+                            prob.setLocalTempPrt(Math.floor(tempToProgress(oldTemp)))
                         }
                     }
                 })
@@ -137,19 +140,13 @@ export default function TopTemperatureView(prob: ChildComponentProps) {
             }
         } else {
             if (value>=120) {
-                // showModal({title: '', content: subTitle, showCancel: true, cancelText: Strings.getLang('no'), confirmText: Strings.getLang('yes'), 
-                //     success: (params) => {
-                //         if (params.confirm) {
-                //             alertSetTemp(value)
-                //         } else {
-                //             prob.setLocalTempPrt(Math.floor(tempToProgress(setTemp)))
-                //         }
-                //     }
-                // })
-                showModal({title: '', content: subTitle, showCancel: false, confirmText: Strings.getLang('yes'), 
+                showModal({title: '', content: Strings.getLang('hightTempWarm_f'), showCancel: true, cancelText: Strings.getLang('no'), confirmText: Strings.getLang('yes'), 
                     success: (params) => {
                         if (params.confirm) {
                             alertSetTemp(value)
+                        } else {
+                            const oldTemp = temp_fRef.current
+                            prob.setLocalTempPrt(Math.floor(tempToProgress(oldTemp)))
                         }
                     }
                 })
@@ -160,7 +157,7 @@ export default function TopTemperatureView(prob: ChildComponentProps) {
     }
 
     function alertSetTemp(temp: number) {
-        if (dpState["temp_unit_convert"]==='c') {
+        if (unitRef.current==='c') {
             actions['temp_set'].set(temp)
         } else {
             actions['temp_set_f'].set(temp)
