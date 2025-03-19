@@ -74,13 +74,12 @@ export function Home() {
   // 进度条值 -> 温度值
   function progressToTemp(progress: number): number {
     if (unit==='c') {
-        return Math.floor(
-            setTempMin +
-            (progress) * (setTempMax - setTempMin) / (100)
-        )
+      const temp = Math.floor( setTempMin + (progress) * (setTempMax - setTempMin) / (100));
+      // console.log('log: temp', temp)
+      return temp
     } else {
         const index = Math.round(progress / 100 * (fahrenheitTemps.length - 1));
-        console.log('log: fahrenheitTemps', fahrenheitTemps[index])
+        // console.log('log: fahrenheitTemps', fahrenheitTemps[index])
         return fahrenheitTemps[index];
     }
 }

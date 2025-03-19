@@ -35,8 +35,7 @@ export default function TopTemperatureView(prob: ChildComponentProps) {
     const temp_cRef = useRef(temp_c);
     const temp_fRef = useRef(temp_f);
     
-    // const setTemp_Ref = unitRef.current==='c'?temp_cRef:temp_fRef
-    const setTemp = useProps(state => state)["temp_unit_convert"]==='c'?temp_c:temp_f
+    // const setTemp = useProps(state => state)["temp_unit_convert"]==='c'?temp_c:temp_f
 
     const fault = useProps(state => state)['fault']
     const waterFlowStatus = useProps(state => state)['water_flow_status']
@@ -45,8 +44,8 @@ export default function TopTemperatureView(prob: ChildComponentProps) {
 
     const tempColor = (!switch_power || fault !== 0) ? '#282828':'#000000'
     
-    const setTempMin = unitRef.current==='c' ? 35 : 95;
-    const setTempMax = unitRef.current==='c' ? 65 : 149;
+    // const setTempMin = () => unitRef.current==='c' ? 35 : 95;
+    // const setTempMax = () => unitRef.current==='c' ? 65 : 149;
 
     const disable = !switch_power || (fault !== 0)
 
@@ -58,14 +57,15 @@ export default function TopTemperatureView(prob: ChildComponentProps) {
     const iconFanColor = fanStatus ? activeIconColor:lazyIconColor
     
     useEffect(() => {
-        prob.setLocalTempPrt(tempToProgress(setTemp))
         temp_cRef.current = temp_c;
         temp_fRef.current = temp_f;
+        unitRef.current = unit;
+        prob.setLocalTempPrt(tempToProgress(unit==='c'?temp_c:temp_f))
     }, [temp_c, temp_f, unit]);
 
-    useEffect(() => {
-        unitRef.current = unit;
-    }, [unit]);
+    // useEffect(() => {
+    //     unitRef.current = unit;
+    // }, [unit]);
 
     const tempUnit = () : string => {
         if (unit === "c") {
@@ -83,7 +83,6 @@ export default function TopTemperatureView(prob: ChildComponentProps) {
         // prob.setIsShowLocalTemp(true);
         // 设置本地温度
         prob.setLocalTempPrt(v)
-        
     };
     
     // 处理温度环结束函数
@@ -97,11 +96,13 @@ export default function TopTemperatureView(prob: ChildComponentProps) {
 
     // 进度条值 -> 温度值
     function progressToTemp(progress: number): number {
+        console.log('progressToTemp: ', unitRef)
         if (unitRef.current==='c') {
-            return Math.floor(
-                setTempMin +
-                (progress) * (setTempMax - setTempMin) / (100)
-            )
+            const min = unitRef.current==='c' ? 35 : 95
+            const max = unitRef.current==='c' ? 65 : 149
+            const temp = Math.floor(min +(progress) * (max - min) / (100))
+            console.log('progressToTemp: ', temp)
+            return temp
         } else {
             const index = Math.round(progress / 100 * (fahrenheitTemps.length - 1));
             return fahrenheitTemps[index];
@@ -110,10 +111,13 @@ export default function TopTemperatureView(prob: ChildComponentProps) {
     
     // 温度值 -> 进度条值
     function tempToProgress(temp: number): number {
-        if (unit==='c') {
-            return (
-                (temp - setTempMin) * (100) / (setTempMax - setTempMin)
-            )
+        console.log('tempToProgress: ', unitRef)
+        if (unitRef.current==='c') {
+            const min = unitRef.current==='c' ? 35 : 95
+            const max = unitRef.current==='c' ? 65 : 149
+            const pro = (temp - min) * (100) / (max - min)
+            console.log('tempToProgress: ', pro)
+            return pro
         } else {
             const index = fahrenheitTemps.indexOf(temp);
             return index !== -1 ? (index / (fahrenheitTemps.length - 1)) * 100 : 0;
